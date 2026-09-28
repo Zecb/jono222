@@ -1,6 +1,6 @@
 -- ============================================================
 -- AUTO VOTE + SPEEDUP + ANTI-AFK + UNITS + UPGRADES + SAVE + AUTO REPLAY + MENU BIND
--- + ACCOUNT CONFIGS (по UserId)
+-- + ACCOUNT CONFIGS (по UserId) + AUTO-LOAD (auto-inject после телепорта)
 -- ============================================================
 
 local repo = 'https://raw.githubusercontent.com/Progoonerfrfr/LinoriaLib/main/'
@@ -445,7 +445,6 @@ local BASE_FOLDER     = 'AutoVoteMenu'
 local CONFIGS_FOLDER  = 'AutoVoteMenu/configs'
 local ACCOUNTS_FOLDER = 'AutoVoteMenu/accounts'
 
--- 🎯 Файлы конкретного аккаунта
 local POSITIONS_FILE = CONFIGS_FOLDER .. '/' .. USER_ID .. '_positions.json'
 local SPEED_FILE     = CONFIGS_FOLDER .. '/' .. USER_ID .. '_speed.json'
 local ACCOUNT_FILE   = CONFIGS_FOLDER .. '/' .. USER_ID .. '_account.txt'
@@ -560,7 +559,6 @@ end
 loadPositionsFromFile()
 loadSpeedFromFile()
 
--- 🎯 Автосохранение каждые 30 сек
 task.spawn(function()
     while task.wait(30) do
         pcall(savePositionsToFile)
@@ -944,7 +942,6 @@ UnitsGroup:AddToggle('CheckBalanceToggle', {
     Callback = function(v) checkBalanceEnabled = v end,
 })
 
--- 🔧 Однострочный счётчик — Linoria не поддерживает многострочные лейблы
 local PosLabel = UnitsGroup:AddLabel('📊 Позиций: 0', false)
 
 local function getSelectedUnitName()
@@ -1613,7 +1610,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 🔁 AUTO REPLAY (IMPROVED — реагирует на появление EndScreen + Replay + Visible)
+-- 🔁 AUTO REPLAY
 -- ============================================================
 local AutoReplayGroup = Tabs.Utilities:AddLeftGroupbox('🔁 Auto Replay')
 local autoReplayEnabled = false
@@ -1648,7 +1645,6 @@ end
 local function watchEndScreen(es)
     if not es then return end
 
-    -- Replay уже существует?
     local existing = es:FindFirstChild("Replay")
     if existing then
         task.spawn(function()
@@ -1656,7 +1652,6 @@ local function watchEndScreen(es)
             tryClickReplay('replay existing')
         end)
 
-        -- Ждём когда Replay.Visible станет true
         local connV = existing:GetPropertyChangedSignal("Visible"):Connect(function()
             if not autoReplayEnabled then return end
             if existing.Visible then
@@ -1669,12 +1664,10 @@ local function watchEndScreen(es)
         table.insert(autoReplayConns, connV)
     end
 
-    -- Replay появится позже
     local connR = es.ChildAdded:Connect(function(child)
         if not autoReplayEnabled then return end
         if child.Name == "Replay" then
             print('[AutoReplay] 📺 Появился Replay')
-            -- ждём видимости
             if child:IsA("GuiObject") then
                 local connV2 = child:GetPropertyChangedSignal("Visible"):Connect(function()
                     if not autoReplayEnabled then return end
@@ -1699,7 +1692,6 @@ end
 local function attachToGameGui(gg)
     if not gg then return end
 
-    -- EndScreen уже есть?
     local es = gg:FindFirstChild("EndScreen")
     if es then
         watchEndScreen(es)
@@ -1708,7 +1700,6 @@ local function attachToGameGui(gg)
             tryClickReplay('initial scan')
         end)
 
-        -- EndScreen.Visible сменился
         local connVis = es:GetPropertyChangedSignal("Visible"):Connect(function()
             if not autoReplayEnabled then return end
             if es.Visible then
@@ -1721,7 +1712,6 @@ local function attachToGameGui(gg)
         table.insert(autoReplayConns, connVis)
     end
 
-    -- EndScreen появится позже
     local connES = gg.ChildAdded:Connect(function(child)
         if not autoReplayEnabled then return end
         if child.Name == "EndScreen" then
@@ -1770,7 +1760,6 @@ local function setupAutoReplay()
         table.insert(autoReplayConns, connGG)
     end
 
-    -- Периодическая страховка
     task.spawn(function()
         while autoReplayEnabled do
             task.wait(2)
@@ -2239,6 +2228,213 @@ task.spawn(function()
 end)
 
 -- ============================================================
+-- 🔄 AUTO-LOAD / AUTO-INJECT (перезагрузка скрипта после телепорта/респавна)
+-- ============================================================
+local AutoLoadGroup = Tabs.Utilities:AddLeftGroupbox('🔄 Auto-Load Script')
+
+local AUTOLOAD_URL_FILE   = 'AutoVoteMenu/autoload_url.txt'
+local AUTOLOAD_STATE_FILE = 'AutoVoteMenu/autoload_state.txt'
+
+-- 🎯 URL по умолчанию (можно поменять в UI)
+local DEFAULT_AUTOLOAD_URL = 'https://raw.githubusercontent.com/Zecb/jono222/main/ner/Script.lua'
+
+-- 🎯 Поиск функции queue_on_teleport у разных экзекьюторов
+local function getQueueFn()
+    if queue_on_teleport       then return queue_on_teleport       end
+    if queueonteleport         then return queueonteleport         end
+    if syn and syn.queue_on_teleport       then return syn.queue_on_teleport       end
+    if fluxus and fluxus.queue_on_teleport then return fluxus.queue_on_teleport     end
+    return nil
+end
+
+-- 🎯 Собирает loader, который выполнится на новой стороне
+local function buildLoader(url)
+    return string.format([[
+        -- AutoLoad Loader
+        task.wait(3)
+        repeat task.wait(0.3) until game:IsLoaded()
+        local plr = game:GetService("Players").LocalPlayer
+        repeat task.wait(0.2) until plr and plr.Character
+        task.wait(2)
+        local ok, err = pcall(function()
+            loadstring(game:HttpGet(%q))()
+        end)
+        if not ok then warn("[AutoLoad] ❌ Ошибка:", tostring(err)) end
+    ]], url)
+end
+
+-- 🎯 Читает URL из файла
+local function loadSavedURL()
+    if not readfile or not isfile then return nil end
+    local exists = false
+    pcall(function() exists = isfile(AUTOLOAD_URL_FILE) end)
+    if not exists then return nil end
+    local url = nil
+    pcall(function() url = readfile(AUTOLOAD_URL_FILE) end)
+    if not url or url == '' then return nil end
+    return url:gsub('%s+', '')
+end
+
+-- 🎯 Сохраняет URL
+local function saveURL(url)
+    if not writefile then return false end
+    return pcall(function()
+        if makefolder then pcall(makefolder, 'AutoVoteMenu') end
+        writefile(AUTOLOAD_URL_FILE, url:gsub('%s+', ''))
+    end)
+end
+
+-- 🎯 Основная функция: поставить скрипт в очередь на следующий телепорт
+local function doQueueAutoLoad()
+    local queueFn = getQueueFn()
+    if not queueFn then
+        return false, 'queue_on_teleport недоступен'
+    end
+    local url = loadSavedURL() or DEFAULT_AUTOLOAD_URL
+    if not url then
+        return false, 'URL не задан'
+    end
+    local ok = pcall(function() queueFn(buildLoader(url)) end)
+    if ok then
+        print('[AutoLoad] ✅ Скрипт поставлен в очередь: ' .. url)
+    end
+    return ok, nil
+end
+
+-- 🎯 UI
+local URLInputOpt = AutoLoadGroup:AddInput('AutoLoadURL', {
+    Text = '🌐 URL скрипта (raw GitHub и т.п.)',
+    Default = DEFAULT_AUTOLOAD_URL,
+    Placeholder = 'https://raw.githubusercontent.com/user/repo/main/script.lua',
+    Numeric = false,
+    Finished = true,
+    Callback = function(v)
+        if not v or v == '' then return end
+        if saveURL(v) then
+            print('[AutoLoad] 🌐 URL сохранён:', v)
+        end
+    end,
+})
+
+AutoLoadGroup:AddLabel('📌 URL по умолчанию уже прописан', false)
+
+AutoLoadGroup:AddButton({
+    Text = '💾 Сохранить URL',
+    Func = function()
+        local url = URLInputOpt.Value
+        if not url or url == '' then
+            Library:Notify('❌ Введи URL', 3)
+            return
+        end
+        if saveURL(url) then
+            Library:Notify('💾 URL сохранён', 2)
+        else
+            Library:Notify('❌ writefile недоступен', 3)
+        end
+    end,
+})
+
+AutoLoadGroup:AddButton({
+    Text = '🚀 Заскриптовать сейчас (1 раз)',
+    Func = function()
+        local ok, err = doQueueAutoLoad()
+        if ok then
+            Library:Notify('🚀 Поставлено на след. телепорт', 3)
+        else
+            Library:Notify('❌ ' .. tostring(err), 3)
+        end
+    end,
+})
+
+local autoLoadEnabled = false
+
+AutoLoadGroup:AddToggle('AutoLoadToggle', {
+    Text = '🔄 Авто-загрузка скрипта после телепорта',
+    Default = false,
+    Tooltip = 'Скрипт сам себя перезапустит после респавна/реинжоина/телепорта',
+    Callback = function(Value)
+        autoLoadEnabled = Value
+        if writefile then
+            pcall(function()
+                if makefolder then pcall(makefolder, 'AutoVoteMenu') end
+                writefile(AUTOLOAD_STATE_FILE, Value and '1' or '0')
+            end)
+        end
+        if Value then
+            local ok, err = doQueueAutoLoad()
+            if not ok then
+                Library:Notify('❌ ' .. tostring(err), 3)
+                autoLoadEnabled = false
+                pcall(function()
+                    Library.Options.AutoLoadToggle:SetValue(false)
+                end)
+            else
+                Library:Notify('🔄 Auto-Load ВКЛ', 2)
+            end
+        end
+    end,
+})
+
+AutoLoadGroup:AddButton({
+    Text = '🔎 Диагностика',
+    Func = function()
+        print('========== AutoLoad ==========')
+        print('queue_on_teleport:', queue_on_teleport and '✅' or '❌')
+        print('queueonteleport:', queueonteleport and '✅' or '❌')
+        print('syn.queue_on_teleport:',
+            (syn and syn.queue_on_teleport) and '✅' or '❌')
+        print('fluxus.queue_on_teleport:',
+            (fluxus and fluxus.queue_on_teleport) and '✅' or '❌')
+        print('readfile:', readfile and '✅' or '❌')
+        print('writefile:', writefile and '✅' or '❌')
+        print('URL:', loadSavedURL() or ('(по умолчанию) ' .. DEFAULT_AUTOLOAD_URL))
+        print('Enabled:', tostring(autoLoadEnabled))
+        print('==============================')
+    end,
+})
+
+-- 🎯 Восстановление URL и состояния при загрузке
+task.spawn(function()
+    task.wait(1)
+    local url = loadSavedURL()
+    if url then
+        pcall(function() URLInputOpt:SetValue(url) end)
+    else
+        -- сохраняем дефолт при первом запуске
+        pcall(saveURL, DEFAULT_AUTOLOAD_URL)
+    end
+    if readfile and isfile then
+        local exists = false
+        pcall(function() exists = isfile(AUTOLOAD_STATE_FILE) end)
+        if exists then
+            local st = nil
+            pcall(function() st = readfile(AUTOLOAD_STATE_FILE) end)
+            if st == '1' then
+                task.wait(2)
+                pcall(function()
+                    Library.Options.AutoLoadToggle:SetValue(true)
+                end)
+            end
+        end
+    end
+end)
+
+-- 🎯 Ловим момент, когда телепорт стартует, и перескриптовываем
+pcall(function()
+    local lp = game:GetService("Players").LocalPlayer
+    if lp.OnTeleport then
+        lp.OnTeleport:Connect(function(state)
+            if not autoLoadEnabled then return end
+            if state == Enum.TeleportState.Started
+            or state == Enum.TeleportState.InProgress then
+                doQueueAutoLoad()
+            end
+        end)
+        print('[AutoLoad] 🎯 OnTeleport-хук установлен')
+    end
+end)
+
+-- ============================================================
 -- ⌨ KEYBIND МЕНЮ
 -- ============================================================
 local UserInputService = game:GetService("UserInputService")
@@ -2405,208 +2601,7 @@ KeybindGroup:AddButton({
         end
     end,
 })
- -- ============================================================
--- 🔄 AUTO-LOAD / AUTO-INJECT (перезагрузка скрипта после телепорта/респавна)
--- ============================================================
-local AutoLoadGroup = Tabs.Utilities:AddLeftGroupbox('🔄 Auto-Load Script')
 
-local AUTOLOAD_URL_FILE    = 'AutoVoteMenu/autoload_url.txt'
-local AUTOLOAD_STATE_FILE  = 'AutoVoteMenu/autoload_state.txt'
-
--- 🎯 Поиск функции queue_on_teleport у разных экзекьюторов
-local function getQueueFn()
-    if queue_on_teleport       then return queue_on_teleport       end
-    if queueonteleport         then return queueonteleport         end
-    if syn and syn.queue_on_teleport       then return syn.queue_on_teleport       end
-    if fluxus and fluxus.queue_on_teleport then return fluxus.queue_on_teleport     end
-    if secure_call and queue_on_teleport   then return queue_on_teleport            end
-    return nil
-end
-
--- 🎯 Собирает loader, который выполнится на новой стороне
-local function buildLoader(url)
-    return string.format([[
-        -- AutoLoad Loader
-        task.wait(3)
-        repeat task.wait(0.3) until game:IsLoaded()
-        local plr = game:GetService("Players").LocalPlayer
-        repeat task.wait(0.2) until plr and plr.Character
-        task.wait(2)
-        local ok, err = pcall(function()
-            loadstring(game:HttpGet(%q))()
-        end)
-        if not ok then warn("[AutoLoad] ❌ Ошибка:", tostring(err)) end
-    ]], url)
-end
-
--- 🎯 Читает URL из файла
-local function loadSavedURL()
-    if not readfile or not isfile then return nil end
-    local exists = false
-    pcall(function() exists = isfile(AUTOLOAD_URL_FILE) end)
-    if not exists then return nil end
-    local url = nil
-    pcall(function() url = readfile(AUTOLOAD_URL_FILE) end)
-    if not url or url == '' then return nil end
-    return url:gsub('%s+', '')
-end
-
--- 🎯 Сохраняет URL
-local function saveURL(url)
-    if not writefile then return false end
-    return pcall(function()
-        if makefolder then pcall(makefolder, 'AutoVoteMenu') end
-        writefile(AUTOLOAD_URL_FILE, url:gsub('%s+', ''))
-    end)
-end
-
--- 🎯 Основная функция: поставить скрипт в очередь на следующий телепорт
-local function doQueueAutoLoad()
-    local queueFn = getQueueFn()
-    if not queueFn then
-        return false, 'queue_on_teleport недоступен в этом экзекьюторе'
-    end
-    local url = loadSavedURL()
-    if not url then
-        return false, 'URL не задан'
-    end
-    local ok = pcall(function() queueFn(buildLoader(url)) end)
-    if ok then
-        print('[AutoLoad] ✅ Скрипт поставлен в очередь на след. телепорт: ' .. url)
-    end
-    return ok, nil
-end
-
--- 🎯 UI
-local URLInputOpt = AutoLoadGroup:AddInput('AutoLoadURL', {
-    Text = '🌐 URL скрипта (raw GitHub и т.п.)',
-    Default = '',
-    Placeholder = 'https://raw.githubusercontent.com/user/repo/main/script.lua',
-    Numeric = false,
-    Finished = true,
-    Callback = function(v)
-        if not v or v == '' then return end
-        if saveURL(v) then
-            print('[AutoLoad] 🌐 URL сохранён:', v)
-        end
-    end,
-})
-
-AutoLoadGroup:AddLabel('📌 Нужен URL на RAW-скрипт', false)
-AutoLoadGroup:AddLabel('Пример: raw.githubusercontent.com/...', false)
-
-AutoLoadGroup:AddButton({
-    Text = '💾 Сохранить URL',
-    Func = function()
-        local url = URLInputOpt.Value
-        if not url or url == '' then
-            Library:Notify('❌ Введи URL', 3)
-            return
-        end
-        if saveURL(url) then
-            Library:Notify('💾 URL сохранён', 2)
-        else
-            Library:Notify('❌ writefile недоступен', 3)
-        end
-    end,
-})
-
-AutoLoadGroup:AddButton({
-    Text = '🚀 Заскриптовать сейчас (1 раз)',
-    Func = function()
-        local ok, err = doQueueAutoLoad()
-        if ok then
-            Library:Notify('🚀 Поставлено на след. телепорт', 3)
-        else
-            Library:Notify('❌ ' .. tostring(err), 3)
-        end
-    end,
-})
-
-local autoLoadEnabled = false
-
-AutoLoadGroup:AddToggle('AutoLoadToggle', {
-    Text = '🔄 Авто-загрузка скрипта после телепорта',
-    Default = false,
-    Tooltip = 'Скрипт сам себя перезапустит после респавна/реинжоина/телепорта',
-    Callback = function(Value)
-        autoLoadEnabled = Value
-        if writefile then
-            pcall(function()
-                if makefolder then pcall(makefolder, 'AutoVoteMenu') end
-                writefile(AUTOLOAD_STATE_FILE, Value and '1' or '0')
-            end)
-        end
-        if Value then
-            local ok, err = doQueueAutoLoad()
-            if not ok then
-                Library:Notify('❌ ' .. tostring(err), 3)
-                autoLoadEnabled = false
-                pcall(function()
-                    Library.Options.AutoLoadToggle:SetValue(false)
-                end)
-            else
-                Library:Notify('🔄 Auto-Load ВКЛ', 2)
-            end
-        end
-    end,
-})
-
-AutoLoadGroup:AddButton({
-    Text = '🔎 Диагностика',
-    Func = function()
-        print('========== AutoLoad ==========')
-        print('queue_on_teleport:', queue_on_teleport and '✅' or '❌')
-        print('queueonteleport:', queueonteleport and '✅' or '❌')
-        print('syn.queue_on_teleport:',
-            (syn and syn.queue_on_teleport) and '✅' or '❌')
-        print('fluxus.queue_on_teleport:',
-            (fluxus and fluxus.queue_on_teleport) and '✅' or '❌')
-        print('readfile:', readfile and '✅' or '❌')
-        print('writefile:', writefile and '✅' or '❌')
-        print('URL:', loadSavedURL() or '(нет)')
-        print('Enabled:', tostring(autoLoadEnabled))
-        print('==============================')
-    end,
-})
-
--- 🎯 Восстановление URL и состояния при загрузке
-task.spawn(function()
-    task.wait(1)
-    local url = loadSavedURL()
-    if url then
-        pcall(function() URLInputOpt:SetValue(url) end)
-    end
-    if readfile and isfile then
-        local exists = false
-        pcall(function() exists = isfile(AUTOLOAD_STATE_FILE) end)
-        if exists then
-            local st = nil
-            pcall(function() st = readfile(AUTOLOAD_STATE_FILE) end)
-            if st == '1' and url then
-                task.wait(2)
-                pcall(function()
-                    Library.Options.AutoLoadToggle:SetValue(true)
-                end)
-            end
-        end
-    end
-end)
-
--- 🎯 Ловим момент, когда телепорт стартует, и перескриптовываем
-pcall(function()
-    local lp = game:GetService("Players").LocalPlayer
-    if lp.OnTeleport then
-        lp.OnTeleport:Connect(function(state)
-            if not autoLoadEnabled then return end
-            if state == Enum.TeleportState.Started
-            or state == Enum.TeleportState.InProgress then
-                doQueueAutoLoad()
-            end
-        end)
-        print('[AutoLoad] 🎯 OnTeleport-хук установлен')
-    end
-end)
 -- ============================================================
 -- ⚙ НАСТРОЙКИ
 -- ============================================================
@@ -2615,7 +2610,6 @@ ThemeManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({})
 
--- 🎯 Папка конфигов LinoriaLib по аккаунту
 if makefolder then
     pcall(makefolder, 'AutoVoteMenu')
     pcall(makefolder, 'AutoVoteMenu/accounts')
@@ -2741,4 +2735,4 @@ end)
 
 Library.ToggleKeybind = Enum.KeyCode.RightShift
 
-print('[AutoVote+SpeedUp+Units+AutoUpgrade+AntiAFK+AutoReplay+AutoMutation+Keybind+AccountConfigs] Загружено ✅')
+print('[AutoVote+SpeedUp+Units+AutoUpgrade+AntiAFK+AutoReplay+AutoMutation+Keybind+AccountConfigs+AutoLoad] Загружено ✅')
