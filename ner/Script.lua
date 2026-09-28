@@ -2284,8 +2284,14 @@ local function saveURL(url)
     end)
 end
 
+-- 🎯 Защита от повторной постановки: очередь должна содержать ровно 1 loader
+local _autoloadQueued = false
+
 -- 🎯 Основная функция: поставить скрипт в очередь на следующий телепорт
 local function doQueueAutoLoad()
+    if _autoloadQueued then
+        return true, nil
+    end
     local queueFn = getQueueFn()
     if not queueFn then
         return false, 'queue_on_teleport недоступен'
@@ -2296,6 +2302,7 @@ local function doQueueAutoLoad()
     end
     local ok = pcall(function() queueFn(buildLoader(url)) end)
     if ok then
+        _autoloadQueued = true
         print('[AutoLoad] ✅ Скрипт поставлен в очередь: ' .. url)
     end
     return ok, nil
@@ -2419,20 +2426,10 @@ task.spawn(function()
     end
 end)
 
--- 🎯 Ловим момент, когда телепорт стартует, и перескриптовываем
-pcall(function()
-    local lp = game:GetService("Players").LocalPlayer
-    if lp.OnTeleport then
-        lp.OnTeleport:Connect(function(state)
-            if not autoLoadEnabled then return end
-            if state == Enum.TeleportState.Started
-            or state == Enum.TeleportState.InProgress then
-                doQueueAutoLoad()
-            end
-        end)
-        print('[AutoLoad] 🎯 OnTeleport-хук установлен')
-    end
-end)
+-- 🎯 Хук OnTeleport намеренно НЕ используется.
+-- queue_on_teleport уже держит loader в очереди ДО телепорта.
+-- Повторный вызов doQueueAutoLoad() из хука добавлял бы вторую копию
+-- в ту же очередь, и после N телепортов запускалось бы N копий скрипта.
 
 -- ============================================================
 -- ⌨ KEYBIND МЕНЮ
