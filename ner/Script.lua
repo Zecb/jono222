@@ -464,6 +464,138 @@ local function ensureFolders()
 end
 ensureFolders()
 
+-- ============================================================
+-- 🔒 SINGLE INSTANCE GUARD — 1 Roblox-аккаунт = 1 запущенный скрипт
+-- ============================================================
+-- Лок-файл: <BASE_FOLDER>/instance_lock_<UserId>.txt
+-- Формат:   <TOKEN>|<JobId>|<unix-time>
+--   TOKEN  — уникальный идентификатор этого запуска
+--   JobId  — сервер; если он отличается, предыдущий запуск был в другом
+--            сервере (телепорт/реинжоин) и считается мёртвым
+--   time   — время последнего heartbeat; нужно для отлова зависших копий
+local LOCK_FILE           = BASE_FOLDER .. '/instance_lock_' .. USER_ID .. '.txt'
+local HEARTBEAT_EVERY     = 3
+local LOCK_STALE_AFTER    = 15
+local MY_JOB              = game.JobId
+
+local MY_TOKEN = nil
+pcall(function()
+    MY_TOKEN = game:GetService("HttpService"):GenerateGUID(false)
+end)
+if not MY_TOKEN or MY_TOKEN == '' then
+    MY_TOKEN = tostring(os.time()) .. '-' .. tostring(math.random(1, 999999999))
+end
+
+local function readLock()
+    if not (readfile and isfile) then return nil end
+    local exists = false
+    pcall(function() exists = isfile(LOCK_FILE) end)
+    if not exists then return nil end
+    local content = nil
+    pcall(function() content = readfile(LOCK_FILE) end)
+    if not content or content == '' then return nil end
+    local token, job, timeStr = content:match('^([^|]+)|([^|]*)|(.*)$')
+    if not token then return nil end
+    return { token = token, job = job, time = tonumber(timeStr) or 0 }
+end
+
+local function writeLock()
+    if not writefile then return false end
+    return pcall(function()
+        ensureFolders()
+        writefile(LOCK_FILE, MY_TOKEN .. '|' .. MY_JOB .. '|' .. tostring(os.time()))
+    end)
+end
+
+local function lockHeldByOther()
+    local lock = readLock()
+    if not lock then return false end
+    if lock.token == MY_TOKEN then return false end
+    if lock.job ~= MY_JOB then return false end
+    if (os.time() - lock.time) > LOCK_STALE_AFTER then return false end
+    return true
+end
+
+local function releaseLock()
+    if not writefile then return end
+    pcall(function() writefile(LOCK_FILE, '') end)
+end
+
+local function forceUnlock()
+    local lock = readLock()
+    if lock and lock.token == MY_TOKEN then
+        releaseLock()
+        return true
+    end
+    return false
+end
+
+local guard = {
+    token = MY_TOKEN,
+    job   = MY_JOB,
+    isPrimary = false,
+    forceUnlock = forceUnlock,
+    status = function()
+        local lock = readLock()
+        if not lock then return 'нет лока' end
+        if lock.token == MY_TOKEN then return 'этот скрипт' end
+        if lock.job ~= MY_JOB then return 'прошлый сервер (мёртв)' end
+        if (os.time() - lock.time) > LOCK_STALE_AFTER then return 'протух (мёртв)' end
+        return 'ДРУГОЙ скрипт активен'
+    end,
+}
+
+if lockHeldByOther() then
+    print('[Instance] ⛔ Дубликат остановлен: скрипт уже запущен для UserId ' .. USER_ID)
+    return
+end
+
+local gotLock = false
+for _ = 1, 5 do
+    if lockHeldByOther() then break end
+    writeLock()
+    task.wait(0.35)
+    local lock = readLock()
+    if lock and lock.token == MY_TOKEN then
+        gotLock = true
+        break
+    end
+end
+
+if not gotLock then
+    print('[Instance] ⛔ Не удалось захватить лок — запуск отменён')
+    return
+end
+
+guard.isPrimary = true
+print('[Instance] ✅ Лок захвачен | UserId:', USER_ID, '| JobId:', MY_JOB)
+
+task.spawn(function()
+    while true do
+        task.wait(HEARTBEAT_EVERY)
+        writeLock()
+    end
+end)
+
+task.spawn(function()
+    local group = Tabs.Utilities:AddLeftGroupbox('🔒 Single Instance')
+    group:AddLabel('На аккаунт допускается только 1 копия скрипта', false)
+    group:AddLabel('Лок-файл: instance_lock_' .. USER_ID .. '.txt', false)
+    group:AddButton({
+        Text = '🔎 Статус лока',
+        Func = function()
+            print('[Instance] Статус лока:', guard.status(), '| primary:', tostring(guard.isPrimary))
+        end,
+    })
+    group:AddButton({
+        Text = '♻️ Сбросить лок и перезапустить',
+        Func = function()
+            releaseLock()
+            Library:Notify('♻️ Лок сброшен — перезапусти скрипт', 3)
+        end,
+    })
+end)
+
 print('[Configs] 📁 Аккаунт:', LocalPlayer.Name, '| UserId:', USER_ID)
 
 local function saveAccountInfo()
