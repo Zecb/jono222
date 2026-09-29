@@ -1,6 +1,6 @@
 -- ============================================================
 -- AUTO VOTE + SPEEDUP + ANTI-AFK + UNITS + UPGRADES + SAVE + AUTO REPLAY + MENU BIND
--- + ACCOUNT CONFIGS (╨┐╨╛ UserId) + AUTO-LOAD (auto-inject ╨┐╨╛╤Б╨╗╨╡ ╤В╨╡╨╗╨╡╨┐╨╛╤А╤В╨░)
+-- + ACCOUNT CONFIGS (по UserId) + AUTO-LOAD (auto-inject после телепорта)
 -- ============================================================
 
 local repo = 'https://raw.githubusercontent.com/Progoonerfrfr/LinoriaLib/main/'
@@ -18,15 +18,15 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
-    Vote      = Window:AddTab('╨У╨╛╨╗╨╛╤Б╨╛╨▓╨░╨╜╨╕╨╡'),
-    SpeedUp   = Window:AddTab('╨б╨║╨╛╤А╨╛╤Б╤В╤М'),
-    Units     = Window:AddTab('╨о╨╜╨╕╤В╤Л'),
-    Utilities = Window:AddTab('╨г╤В╨╕╨╗╨╕╤В╤Л'),
-    Settings  = Window:AddTab('╨Э╨░╤Б╤В╤А╨╛╨╣╨║╨╕'),
+    Vote      = Window:AddTab('Голосование'),
+    SpeedUp   = Window:AddTab('Скорость'),
+    Units     = Window:AddTab('Юниты'),
+    Utilities = Window:AddTab('Утилиты'),
+    Settings  = Window:AddTab('Настройки'),
 }
 
 -- ============================================================
--- ╨г╨в╨Ш╨Ы╨Ш╨в╨л
+-- УТИЛИТЫ
 -- ============================================================
 local MODIFIERS = {
     " Shiny", " Void", " Gold", " Rainbow", " Diamond",
@@ -107,7 +107,7 @@ local function getHRP()
 end
 
 -- ============================================================
--- ЁЯТ░ ╨Я╨Р╨а╨б╨Х╨а ╨з╨Ш╨б╨Х╨Ы
+-- 💰 ПАРСЕР ЧИСЕЛ
 -- ============================================================
 local SUFFIXES = {
     K=1e3, M=1e6, B=1e9, T=1e12, Q=1e15, QA=1e15, QI=1e18,
@@ -145,7 +145,7 @@ local function getMoney()
 end
 
 -- ============================================================
--- ЁЯОп ╨Ы╨Ш╨Ь╨Ш╨в╨л
+-- 🎯 ЛИМИТЫ
 -- ============================================================
 local RS = game:GetService("ReplicatedStorage")
 local Modules = RS:WaitForChild("Modules", 10)
@@ -161,7 +161,7 @@ local function loadTowerLimits()
         TOWER_LIMITS = data
         local count = 0
         for _ in pairs(data) do count = count + 1 end
-        print('[Limits] ЁЯУЛ ╨Ч╨░╨│╤А╤Г╨╢╨╡╨╜╨╛ ╨╗╨╕╨╝╨╕╤В╨╛╨▓:', count)
+        print('[Limits] 📋 Загружено лимитов:', count)
         return true
     end
     return false
@@ -174,7 +174,7 @@ local function getLimitForUnit(displayName)
 end
 
 -- ============================================================
--- ЁЯОп REMOTES
+-- 🎯 REMOTES
 -- ============================================================
 local Functions = RS:WaitForChild("Functions", 10)
 
@@ -235,7 +235,7 @@ local function getOwnedVariants(baseName)
 end
 
 -- ============================================================
--- ЁЯЧ│ ╨У╨Ю╨Ы╨Ю╨б╨Ю╨Т╨Р╨Э╨Ш╨Х
+-- 🗳 ГОЛОСОВАНИЕ
 -- ============================================================
 local function getAllVoteButtons()
     local result = {}
@@ -258,10 +258,10 @@ end
 
 local allButtons, filteredKeys, selectedKey, searchQuery = {}, {}, nil, ''
 
-local VoteGroup = Tabs.Vote:AddLeftGroupbox('ЁЯЧ│ ╨Ъ╨░╤А╤В╤Л')
+local VoteGroup = Tabs.Vote:AddLeftGroupbox('🗳 Карты')
 
 local SearchInputOpt = VoteGroup:AddInput('SearchInput', {
-    Text = 'ЁЯФН ╨Я╨╛╨╕╤Б╨║ ╨║╨░╤А╤В╤Л', Default = '', Placeholder = 'raid, endless...',
+    Text = '🔍 Поиск карты', Default = '', Placeholder = 'raid, endless...',
     Numeric = false, Finished = false,
     Callback = function(Value)
         searchQuery = string.lower(Value or '')
@@ -273,10 +273,10 @@ local SearchInputOpt = VoteGroup:AddInput('SearchInput', {
 })
 
 local TargetDropdown = VoteGroup:AddDropdown('VoteTarget', {
-    Values = {}, Default = 1, Multi = false, Text = '╨Ъ╨░╤А╤В╨░',
+    Values = {}, Default = 1, Multi = false, Text = 'Карта',
     Callback = function(Value)
         selectedKey = Value
-        if Value then print('[AutoVote] ╨Т╤Л╨▒╤А╨░╨╜╨╛:', Value) end
+        if Value then print('[AutoVote] Выбрано:', Value) end
     end,
 })
 
@@ -290,15 +290,15 @@ local function refreshList(silent)
     end
     table.sort(filteredKeys)
     TargetDropdown:SetValues(filteredKeys)
-    if not silent then Library:Notify('ЁЯФД ╨Э╨░╨╣╨┤╨╡╨╜╨╛: ' .. #filteredKeys, 2) end
+    if not silent then Library:Notify('🔄 Найдено: ' .. #filteredKeys, 2) end
     if selectedKey and not allButtons[selectedKey] then selectedKey = nil end
 end
 
 _G.__refreshVoteList = refreshList
 
-VoteGroup:AddButton({ Text = 'ЁЯФД ╨Ю╨▒╨╜╨╛╨▓╨╕╤В╤М', Func = function() refreshList(false) end })
+VoteGroup:AddButton({ Text = '🔄 Обновить', Func = function() refreshList(false) end })
 VoteGroup:AddButton({
-    Text = 'тЭМ ╨Ю╤З╨╕╤Б╤В╨╕╤В╤М ╨┐╨╛╨╕╤Б╨║',
+    Text = '❌ Очистить поиск',
     Func = function()
         searchQuery = ''
         pcall(function() SearchInputOpt:SetValue('') end)
@@ -308,7 +308,7 @@ VoteGroup:AddButton({
 
 local autoVoteEnabled = false
 VoteGroup:AddToggle('AutoVoteToggle', {
-    Text = 'ЁЯОп ╨Р╨▓╤В╨╛ ╨▓╨╛╨╣╤В ╨║╨░╤А╤В╤Л', Default = false,
+    Text = '🎯 Авто войт карты', Default = false,
     Callback = function(Value)
         autoVoteEnabled = Value
         if Value then
@@ -322,7 +322,7 @@ VoteGroup:AddToggle('AutoVoteToggle', {
                         clickButton(allButtons[selectedKey])
                         if selectedKey ~= lastLogged then
                             lastLogged = selectedKey
-                            print('[AutoVote] тЬЕ', selectedKey)
+                            print('[AutoVote] ✅', selectedKey)
                         end
                     end
                     task.wait(1)
@@ -332,7 +332,7 @@ VoteGroup:AddToggle('AutoVoteToggle', {
     end,
 })
 
-local AutoRefreshToggle = VoteGroup:AddToggle('AutoRefreshToggle', { Text = '╨Р╨▓╤В╨╛-╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╕╨╡', Default = true })
+local AutoRefreshToggle = VoteGroup:AddToggle('AutoRefreshToggle', { Text = 'Авто-обновление', Default = true })
 
 task.spawn(function()
     while task.wait(2) do
@@ -364,10 +364,10 @@ end
 
 local compButtons, compKeys, selectedComp, compSearch = {}, {}, nil, ''
 
-local CompGroup = Tabs.Vote:AddRightGroupbox('ЁЯОп ╨б╨╗╨╛╨╢╨╜╨╛╤Б╤В╨╕')
+local CompGroup = Tabs.Vote:AddRightGroupbox('🎯 Сложности')
 
 local CompSearchOpt = CompGroup:AddInput('CompSearchInput', {
-    Text = 'ЁЯФН ╨Я╨╛╨╕╤Б╨║ ╤Б╨╗╨╛╨╢╨╜╨╛╤Б╤В╨╕', Default = '', Placeholder = 'nightmare...',
+    Text = '🔍 Поиск сложности', Default = '', Placeholder = 'nightmare...',
     Numeric = false, Finished = false,
     Callback = function(Value)
         compSearch = string.lower(Value or '')
@@ -379,10 +379,10 @@ local CompSearchOpt = CompGroup:AddInput('CompSearchInput', {
 })
 
 local CompDropdown = CompGroup:AddDropdown('CompTarget', {
-    Values = {}, Default = 1, Multi = false, Text = '╨б╨╗╨╛╨╢╨╜╨╛╤Б╤В╤М',
+    Values = {}, Default = 1, Multi = false, Text = 'Сложность',
     Callback = function(Value)
         selectedComp = Value
-        if Value then print('[Complication] ╨Т╤Л╨▒╤А╨░╨╜╨╛:', Value) end
+        if Value then print('[Complication] Выбрано:', Value) end
     end,
 })
 
@@ -396,16 +396,16 @@ local function refreshCompList(silent)
     end
     table.sort(compKeys)
     CompDropdown:SetValues(compKeys)
-    if not silent then Library:Notify('ЁЯФД ╨б╨╗╨╛╨╢╨╜╨╛╤Б╤В╨╡╨╣: ' .. #compKeys, 2) end
+    if not silent then Library:Notify('🔄 Сложностей: ' .. #compKeys, 2) end
 end
 
 _G.__refreshCompList = refreshCompList
 
-CompGroup:AddButton({ Text = 'ЁЯФД ╨Ю╨▒╨╜╨╛╨▓╨╕╤В╤М', Func = function() refreshCompList(false) end })
+CompGroup:AddButton({ Text = '🔄 Обновить', Func = function() refreshCompList(false) end })
 
 local autoCompEnabled = false
 CompGroup:AddToggle('AutoCompToggle', {
-    Text = 'ЁЯОп ╨Р╨▓╤В╨╛ ╨│╨╛╨╗╨╛╤Б ╤Б╨╗╨╛╨╢╨╜╨╛╤Б╤В╨╕', Default = false,
+    Text = '🎯 Авто голос сложности', Default = false,
     Callback = function(Value)
         autoCompEnabled = Value
         if Value then
@@ -419,7 +419,7 @@ CompGroup:AddToggle('AutoCompToggle', {
                         clickButton(compButtons[selectedComp])
                         if selectedComp ~= lastLogged then
                             lastLogged = selectedComp
-                            print('[Complication] тЬЕ', selectedComp)
+                            print('[Complication] ✅', selectedComp)
                         end
                     end
                     task.wait(0.8)
@@ -435,7 +435,7 @@ end)
 refreshCompList(true)
 
 -- ============================================================
--- ЁЯТ╛ ╨б╨Ю╨е╨а╨Р╨Э╨Х╨Э╨Ш╨Х (╨┐╨╛ ╨░╨║╨║╨░╤Г╨╜╤В╤Г)
+-- 💾 СОХРАНЕНИЕ (по аккаунту)
 -- ============================================================
 local Players      = game:GetService("Players")
 local LocalPlayer  = Players.LocalPlayer
@@ -465,14 +465,14 @@ end
 ensureFolders()
 
 -- ============================================================
--- ЁЯФТ SINGLE INSTANCE GUARD тАФ 1 Roblox-╨░╨║╨║╨░╤Г╨╜╤В = 1 ╨╖╨░╨┐╤Г╤Й╨╡╨╜╨╜╤Л╨╣ ╤Б╨║╤А╨╕╨┐╤В
+-- 🔒 SINGLE INSTANCE GUARD — 1 Roblox-аккаунт = 1 запущенный скрипт
 -- ============================================================
--- ╨Ы╨╛╨║-╤Д╨░╨╣╨╗: <BASE_FOLDER>/instance_lock_<UserId>.txt
--- ╨д╨╛╤А╨╝╨░╤В:   <TOKEN>|<JobId>|<unix-time>
---   TOKEN  тАФ ╤Г╨╜╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╨╕╨┤╨╡╨╜╤В╨╕╤Д╨╕╨║╨░╤В╨╛╤А ╤Н╤В╨╛╨│╨╛ ╨╖╨░╨┐╤Г╤Б╨║╨░
---   JobId  тАФ ╤Б╨╡╤А╨▓╨╡╤А; ╨╡╤Б╨╗╨╕ ╨╛╨╜ ╨╛╤В╨╗╨╕╤З╨░╨╡╤В╤Б╤П, ╨┐╤А╨╡╨┤╤Л╨┤╤Г╤Й╨╕╨╣ ╨╖╨░╨┐╤Г╤Б╨║ ╨▒╤Л╨╗ ╨▓ ╨┤╤А╤Г╨│╨╛╨╝
---            ╤Б╨╡╤А╨▓╨╡╤А╨╡ (╤В╨╡╨╗╨╡╨┐╨╛╤А╤В/╤А╨╡╨╕╨╜╨╢╨╛╨╕╨╜) ╨╕ ╤Б╤З╨╕╤В╨░╨╡╤В╤Б╤П ╨╝╤С╤А╤В╨▓╤Л╨╝
---   time   тАФ ╨▓╤А╨╡╨╝╤П ╨┐╨╛╤Б╨╗╨╡╨┤╨╜╨╡╨│╨╛ heartbeat; ╨╜╤Г╨╢╨╜╨╛ ╨┤╨╗╤П ╨╛╤В╨╗╨╛╨▓╨░ ╨╖╨░╨▓╨╕╤Б╤И╨╕╤Е ╨║╨╛╨┐╨╕╨╣
+-- Лок-файл: <BASE_FOLDER>/instance_lock_<UserId>.txt
+-- Формат:   <TOKEN>|<JobId>|<unix-time>
+--   TOKEN  — уникальный идентификатор этого запуска
+--   JobId  — сервер; если он отличается, предыдущий запуск был в другом
+--            сервере (телепорт/реинжоин) и считается мёртвым
+--   time   — время последнего heartbeat; нужно для отлова зависших копий
 local LOCK_FILE           = BASE_FOLDER .. '/instance_lock_' .. USER_ID .. '.txt'
 local HEARTBEAT_EVERY     = 3
 local LOCK_STALE_AFTER    = 15
@@ -537,16 +537,16 @@ local guard = {
     forceUnlock = forceUnlock,
     status = function()
         local lock = readLock()
-        if not lock then return '╨╜╨╡╤В ╨╗╨╛╨║╨░' end
-        if lock.token == MY_TOKEN then return '╤Н╤В╨╛╤В ╤Б╨║╤А╨╕╨┐╤В' end
-        if lock.job ~= MY_JOB then return '╨┐╤А╨╛╤И╨╗╤Л╨╣ ╤Б╨╡╤А╨▓╨╡╤А (╨╝╤С╤А╤В╨▓)' end
-        if (os.time() - lock.time) > LOCK_STALE_AFTER then return '╨┐╤А╨╛╤В╤Г╤Е (╨╝╤С╤А╤В╨▓)' end
-        return '╨Ф╨а╨г╨У╨Ю╨Щ ╤Б╨║╤А╨╕╨┐╤В ╨░╨║╤В╨╕╨▓╨╡╨╜'
+        if not lock then return 'нет лока' end
+        if lock.token == MY_TOKEN then return 'этот скрипт' end
+        if lock.job ~= MY_JOB then return 'прошлый сервер (мёртв)' end
+        if (os.time() - lock.time) > LOCK_STALE_AFTER then return 'протух (мёртв)' end
+        return 'ДРУГОЙ скрипт активен'
     end,
 }
 
 if lockHeldByOther() then
-    print('[Instance] тЫФ ╨Ф╤Г╨▒╨╗╨╕╨║╨░╤В ╨╛╤Б╤В╨░╨╜╨╛╨▓╨╗╨╡╨╜: ╤Б╨║╤А╨╕╨┐╤В ╤Г╨╢╨╡ ╨╖╨░╨┐╤Г╤Й╨╡╨╜ ╨┤╨╗╤П UserId ' .. USER_ID)
+    print('[Instance] ⛔ Дубликат остановлен: скрипт уже запущен для UserId ' .. USER_ID)
     return
 end
 
@@ -563,12 +563,12 @@ for _ = 1, 5 do
 end
 
 if not gotLock then
-    print('[Instance] тЫФ ╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨╖╨░╤Е╨▓╨░╤В╨╕╤В╤М ╨╗╨╛╨║ тАФ ╨╖╨░╨┐╤Г╤Б╨║ ╨╛╤В╨╝╨╡╨╜╤С╨╜')
+    print('[Instance] ⛔ Не удалось захватить лок — запуск отменён')
     return
 end
 
 guard.isPrimary = true
-print('[Instance] тЬЕ ╨Ы╨╛╨║ ╨╖╨░╤Е╨▓╨░╤З╨╡╨╜ | UserId:', USER_ID, '| JobId:', MY_JOB)
+print('[Instance] ✅ Лок захвачен | UserId:', USER_ID, '| JobId:', MY_JOB)
 
 task.spawn(function()
     while true do
@@ -578,25 +578,25 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    local group = Tabs.Utilities:AddLeftGroupbox('ЁЯФТ Single Instance')
-    group:AddLabel('╨Э╨░ ╨░╨║╨║╨░╤Г╨╜╤В ╨┤╨╛╨┐╤Г╤Б╨║╨░╨╡╤В╤Б╤П ╤В╨╛╨╗╤М╨║╨╛ 1 ╨║╨╛╨┐╨╕╤П ╤Б╨║╤А╨╕╨┐╤В╨░', false)
-    group:AddLabel('╨Ы╨╛╨║-╤Д╨░╨╣╨╗: instance_lock_' .. USER_ID .. '.txt', false)
+    local group = Tabs.Utilities:AddLeftGroupbox('🔒 Single Instance')
+    group:AddLabel('На аккаунт допускается только 1 копия скрипта', false)
+    group:AddLabel('Лок-файл: instance_lock_' .. USER_ID .. '.txt', false)
     group:AddButton({
-        Text = 'ЁЯФО ╨б╤В╨░╤В╤Г╤Б ╨╗╨╛╨║╨░',
+        Text = '🔎 Статус лока',
         Func = function()
-            print('[Instance] ╨б╤В╨░╤В╤Г╤Б ╨╗╨╛╨║╨░:', guard.status(), '| primary:', tostring(guard.isPrimary))
+            print('[Instance] Статус лока:', guard.status(), '| primary:', tostring(guard.isPrimary))
         end,
     })
     group:AddButton({
-        Text = 'тЩ╗я╕П ╨б╨▒╤А╨╛╤Б╨╕╤В╤М ╨╗╨╛╨║ ╨╕ ╨┐╨╡╤А╨╡╨╖╨░╨┐╤Г╤Б╤В╨╕╤В╤М',
+        Text = '♻️ Сбросить лок и перезапустить',
         Func = function()
             releaseLock()
-            Library:Notify('тЩ╗я╕П ╨Ы╨╛╨║ ╤Б╨▒╤А╨╛╤И╨╡╨╜ тАФ ╨┐╨╡╤А╨╡╨╖╨░╨┐╤Г╤Б╤В╨╕ ╤Б╨║╤А╨╕╨┐╤В', 3)
+            Library:Notify('♻️ Лок сброшен — перезапусти скрипт', 3)
         end,
     })
 end)
 
-print('[Configs] ЁЯУБ ╨Р╨║╨║╨░╤Г╨╜╤В:', LocalPlayer.Name, '| UserId:', USER_ID)
+print('[Configs] 📁 Аккаунт:', LocalPlayer.Name, '| UserId:', USER_ID)
 
 local function saveAccountInfo()
     if not writefile then return end
@@ -611,7 +611,7 @@ local function saveAccountInfo()
 end
 saveAccountInfo()
 
--- === ╨б╨Ъ╨Ю╨а╨Ю╨б╨в╨м ===
+-- === СКОРОСТЬ ===
 local function saveSpeedToFile()
     if not writefile then return false end
     local json = string.format('{\n "level": %d,\n "interval": %.2f\n}', selectedLevel or 0, speedInterval or 3)
@@ -639,7 +639,7 @@ local function loadSpeedFromFile()
     return true
 end
 
--- === ╨Я╨Ю╨Ч╨Ш╨ж╨Ш╨Ш ===
+-- === ПОЗИЦИИ ===
 local function savePositionsToFile()
     if not writefile then return false end
     local function esc(s)
@@ -682,7 +682,7 @@ local function loadPositionsFromFile()
     end
     if #loaded > 0 then
         savedPositions = loaded
-        print('[Positions] ЁЯУВ [' .. USER_ID .. '] ╨Ч╨░╨│╤А╤Г╨╢╨╡╨╜╨╛ ╨┐╨╛╨╖╨╕╤Ж╨╕╨╣:', #loaded)
+        print('[Positions] 📂 [' .. USER_ID .. '] Загружено позиций:', #loaded)
         return true
     end
     return false
@@ -706,7 +706,7 @@ Players.PlayerRemoving:Connect(function(p)
 end)
 
 -- ============================================================
--- тЪб ╨б╨Ъ╨Ю╨а╨Ю╨б╨в╨м
+-- ⚡ СКОРОСТЬ
 -- ============================================================
 local function getSpeedFrame()
     local ok, frame = pcall(function()
@@ -742,38 +742,38 @@ end
 
 local autoSpeedEnabled = false
 
-local SpeedGroup = Tabs.SpeedUp:AddLeftGroupbox('тЪб ╨Р╨▓╤В╨╛-╤Б╨║╨╛╤А╨╛╤Б╤В╤М')
+local SpeedGroup = Tabs.SpeedUp:AddLeftGroupbox('⚡ Авто-скорость')
 
 local SpeedDropdown = SpeedGroup:AddDropdown('SpeedSelect', {
-    Values = {}, Default = 1, Multi = false, Text = '╨б╨║╨╛╤А╨╛╤Б╤В╤М',
+    Values = {}, Default = 1, Multi = false, Text = 'Скорость',
     Callback = function(Value)
         local lvl = parseLevel(Value)
         if lvl then
             selectedLevel = lvl
-            print('[SpeedUp] ╨Т╤Л╨▒╤А╨░╨╜╨╛: x' .. lvl)
+            print('[SpeedUp] Выбрано: x' .. lvl)
             pcall(saveSpeedToFile)
         end
     end,
 })
 
 SpeedGroup:AddButton({
-    Text = 'ЁЯФД ╨Ю╨▒╨╜╨╛╨▓╨╕╤В╤М ╤Б╨┐╨╕╤Б╨╛╨║',
+    Text = '🔄 Обновить список',
     Func = function()
         local list = getAvailableSpeeds()
-        if #list == 0 then Library:Notify('тЭМ ╨Э╨╡╤В ╨║╨╜╨╛╨┐╨╛╨║', 3) return end
+        if #list == 0 then Library:Notify('❌ Нет кнопок', 3) return end
         SpeedDropdown:SetValues(list)
         if selectedLevel then pcall(function() SpeedDropdown:SetValue('x' .. selectedLevel) end) end
-        Library:Notify('тЬЕ ' .. table.concat(list, ', '), 3)
+        Library:Notify('✅ ' .. table.concat(list, ', '), 3)
     end,
 })
 
 SpeedGroup:AddSlider('SpeedInterval', {
-    Text = 'тП▒ ╨Ш╨╜╤В╨╡╤А╨▓╨░╨╗ (╤Б╨╡╨║)', Default = 3, Min = 1, Max = 30, Rounding = 1, Compact = false,
+    Text = '⏱ Интервал (сек)', Default = 3, Min = 1, Max = 30, Rounding = 1, Compact = false,
     Callback = function(v) speedInterval = v pcall(saveSpeedToFile) end,
 })
 
 SpeedGroup:AddToggle('AutoSpeedToggle', {
-    Text = 'тЪб ╨Р╨▓╤В╨╛-╤Б╨║╨╛╤А╨╛╤Б╤В╤М', Default = false,
+    Text = '⚡ Авто-скорость', Default = false,
     Callback = function(Value)
         autoSpeedEnabled = Value
         if Value then
@@ -789,7 +789,7 @@ SpeedGroup:AddToggle('AutoSpeedToggle', {
                     if not selectedLevel then task.wait(0.5) waited = waited + 0.5 end
                 end
                 if not selectedLevel then return end
-                print('[SpeedUp] тЦ╢ ╨Т╨Ъ╨Ы, x' .. selectedLevel)
+                print('[SpeedUp] ▶ ВКЛ, x' .. selectedLevel)
                 while autoSpeedEnabled do
                     clickSpeed(selectedLevel)
                     local elapsed = 0
@@ -798,7 +798,7 @@ SpeedGroup:AddToggle('AutoSpeedToggle', {
                         elapsed = elapsed + 0.2
                     end
                 end
-                print('[SpeedUp] тЦа ╨Т╨л╨Ъ╨Ы')
+                print('[SpeedUp] ■ ВЫКЛ')
             end)
         end
     end,
@@ -814,7 +814,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ЁЯОп ╨о╨Э╨Ш╨в╨л
+-- 🎯 ЮНИТЫ
 -- ============================================================
 local function scanSlots()
     local result = {}
@@ -877,7 +877,7 @@ local function scanUnitManager()
                 local price, isMax = nil, false
                 if priceRaw then
                     local lower = priceRaw:lower()
-                    if lower:find("max") or lower:find("full") or lower:find("╨╝╨░╨║╤Б") then
+                    if lower:find("max") or lower:find("full") or lower:find("макс") then
                         isMax = true
                     else
                         price = parseMoney(priceRaw)
@@ -951,12 +951,12 @@ local runOnePlacePass = nil
 local runOneUpgradePass = nil
 
 -- ============================================================
--- UI: ╨С╨░╤И╨╜╨╕ ╨▓ ╤Б╨╗╨╛╤В╨░╤Е
+-- UI: Башни в слотах
 -- ============================================================
-local UnitsInfoGroup = Tabs.Units:AddLeftGroupbox('ЁЯЧ╝ ╨С╨░╤И╨╜╨╕ ╨▓ ╤Б╨╗╨╛╤В╨░╤Е')
+local UnitsInfoGroup = Tabs.Units:AddLeftGroupbox('🗼 Башни в слотах')
 local slotLabels = {}
 for i = 1, 6 do
-    slotLabels[i] = UnitsInfoGroup:AddLabel('╨б╨╗╨╛╤В ' .. i .. ': тАФ', false)
+    slotLabels[i] = UnitsInfoGroup:AddLabel('Слот ' .. i .. ': —', false)
 end
 
 local function updateTowerLabels()
@@ -978,36 +978,36 @@ local function updateTowerLabels()
             for _, v in ipairs(owned) do add(v) end
             add(d.name)
 
-            local varText = #variants > 1 and (" [" .. #variants .. " ╨▓╨░╤А.]") or ""
+            local varText = #variants > 1 and (" [" .. #variants .. " вар.]") or ""
             if slotLabels[i] then
                 pcall(function()
-                    slotLabels[i]:SetText('╨б╨╗╨╛╤В ' .. i .. ': ' .. d.name .. varText)
+                    slotLabels[i]:SetText('Слот ' .. i .. ': ' .. d.name .. varText)
                 end)
             end
         else
             if slotLabels[i] then
                 pcall(function()
-                    slotLabels[i]:SetText('╨б╨╗╨╛╤В ' .. i .. ': тАФ')
+                    slotLabels[i]:SetText('Слот ' .. i .. ': —')
                 end)
             end
         end
     end
 end
 
-UnitsInfoGroup:AddButton({ Text = 'ЁЯФД ╨Ю╨▒╨╜╨╛╨▓╨╕╤В╤М', Func = function() updateTowerLabels() end })
+UnitsInfoGroup:AddButton({ Text = '🔄 Обновить', Func = function() updateTowerLabels() end })
 
 UnitsInfoGroup:AddButton({
-    Text = 'ЁЯУК ╨Я╨╛╨║╨░╨╖╨░╤В╤М ╨▓╤Б╨╡ ╨▓╨░╤А╨╕╨░╨╜╤В╤Л ╨▓╤Б╨╡╤Е ╤Б╨╗╨╛╤В╨╛╨▓',
+    Text = '📊 Показать все варианты всех слотов',
     Func = function()
         local slots = scanSlots()
-        print("тХФтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХЧ")
-        print("тХС   ЁЯУК ╨Т╨б╨Х ╨Ф╨Ю╨б╨в╨г╨Я╨Э╨л╨Х ╨Т╨Р╨а╨Ш╨Р╨Э╨в╨л                  тХС")
-        print("тХЪтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХЭ")
+        print("╔═══════════════════════════════════════════╗")
+        print("║   📊 ВСЕ ДОСТУПНЫЕ ВАРИАНТЫ                  ║")
+        print("╚═══════════════════════════════════════════╝")
         for i = 1, 6 do
             local d = slots[i]
             if d and d.name then
                 print("")
-                print("ЁЯФ╖ ╨б╨╗╨╛╤В " .. i .. ": " .. d.name)
+                print("🔷 Слот " .. i .. ": " .. d.name)
 
                 local variants = {}
                 local seen = {}
@@ -1030,7 +1030,7 @@ UnitsInfoGroup:AddButton({
             end
         end
         print("")
-        print("тХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХР")
+        print("═══════════════════════════════════════════")
     end,
 })
 
@@ -1042,12 +1042,12 @@ end)
 local checkBalanceEnabled = true
 local selectedPosIndex = 1
 
-local UnitsGroup = Tabs.Units:AddLeftGroupbox('ЁЯОп ╨о╨╜╨╕╤В ╨╕ ╨┐╨╛╨╖╨╕╤Ж╨╕╨╕')
+local UnitsGroup = Tabs.Units:AddLeftGroupbox('🎯 Юнит и позиции')
 
 local UnitDropdown = UnitsGroup:AddDropdown('UnitSelect', {
-    Values = {}, Default = 1, Multi = false, Text = '╨о╨╜╨╕╤В ╨┤╨╗╤П ╨┐╨╛╨╖╨╕╤Ж╨╕╨╕',
+    Values = {}, Default = 1, Multi = false, Text = 'Юнит для позиции',
     Callback = function(Value)
-        if Value then print('[Units] ╨Т╤Л╨▒╤А╨░╨╜:', Value) end
+        if Value then print('[Units] Выбран:', Value) end
     end,
 })
 
@@ -1061,20 +1061,20 @@ local function refreshUnitsList()
             table.insert(labels, d.name .. (price and (" | $" .. price) or ""))
         end
     end
-    if #labels == 0 then Library:Notify('тЭМ ╨б╨╗╨╛╤В╤Л ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╤Л', 3) return end
+    if #labels == 0 then Library:Notify('❌ Слоты не найдены', 3) return end
     UnitDropdown:SetValues(labels)
-    Library:Notify('ЁЯФД ╨о╨╜╨╕╤В╨╛╨▓: ' .. #labels, 2)
+    Library:Notify('🔄 Юнитов: ' .. #labels, 2)
 end
 
-UnitsGroup:AddButton({ Text = 'ЁЯФД ╨Ю╨▒╨╜╨╛╨▓╨╕╤В╤М ╤Б╨┐╨╕╤Б╨╛╨║', Func = function() refreshUnitsList() end })
+UnitsGroup:AddButton({ Text = '🔄 Обновить список', Func = function() refreshUnitsList() end })
 
-local MoneyLabel = UnitsGroup:AddLabel('ЁЯТ░ ╨С╨░╨╗╨░╨╜╤Б: 0', false)
+local MoneyLabel = UnitsGroup:AddLabel('💰 Баланс: 0', false)
 UnitsGroup:AddToggle('CheckBalanceToggle', {
-    Text = 'ЁЯТ░ ╨Я╤А╨╛╨▓╨╡╤А╤П╤В╤М ╨▒╨░╨╗╨░╨╜╤Б', Default = true,
+    Text = '💰 Проверять баланс', Default = true,
     Callback = function(v) checkBalanceEnabled = v end,
 })
 
-local PosLabel = UnitsGroup:AddLabel('ЁЯУК ╨Я╨╛╨╖╨╕╤Ж╨╕╨╣: 0', false)
+local PosLabel = UnitsGroup:AddLabel('📊 Позиций: 0', false)
 
 local function getSelectedUnitName()
     local val = UnitDropdown.Value
@@ -1084,44 +1084,44 @@ end
 
 local function updatePosLabel()
     pcall(function()
-        PosLabel:SetText('ЁЯУК ╨Я╨╛╨╖╨╕╤Ж╨╕╨╣: ' .. #savedPositions)
+        PosLabel:SetText('📊 Позиций: ' .. #savedPositions)
     end)
 end
 
 local function printPositionsList()
-    print('тХФтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХЧ')
-    print('тХС   ЁЯУК ╨б╨Я╨Ш╨б╨Ю╨Ъ ╨Я╨Ю╨Ч╨Ш╨ж╨Ш╨Щ (' .. #savedPositions .. ')')
-    print('тХЪтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХЭ')
+    print('╔═══════════════════════════════════════════╗')
+    print('║   📊 СПИСОК ПОЗИЦИЙ (' .. #savedPositions .. ')')
+    print('╚═══════════════════════════════════════════╝')
     if #savedPositions == 0 then
-        print('  (╨┐╤Г╤Б╤В╨╛)')
+        print('  (пусто)')
     else
         for i, p in ipairs(savedPositions) do
             local occupied, who, isExact = checkOccupied(p.pos, p.name)
-            local status = occupied and (isExact and 'тЬЕ' or 'ЁЯФ┤') or 'ЁЯЯв'
+            local status = occupied and (isExact and '✅' or '🔴') or '🟢'
             print(string.format('  #%d [%s] %s  @ %.1f, %.1f, %.1f',
                 i, p.name, status, p.pos.X, p.pos.Y, p.pos.Z))
         end
     end
-    print('тХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХРтХР')
+    print('═══════════════════════════════════════════')
 end
 
 UnitsGroup:AddButton({
-    Text = 'ЁЯУМ Set Position',
+    Text = '📌 Set Position',
     Func = function()
         local hrp = getHRP()
-        if not hrp then Library:Notify('тЭМ ╨Ш╨│╤А╨╛╨║ ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜', 3) return end
+        if not hrp then Library:Notify('❌ Игрок не найден', 3) return end
         local unitName = getSelectedUnitName()
-        if not unitName then Library:Notify('тЭМ ╨Т╤Л╨▒╨╡╤А╨╕ ╤О╨╜╨╕╤В╨░', 3) return end
+        if not unitName then Library:Notify('❌ Выбери юнита', 3) return end
         table.insert(savedPositions, { name = unitName, pos = hrp.Position })
         updatePosLabel()
         savePositionsToFile()
-        print(string.format('[Units] ЁЯУМ #%d [%s]', #savedPositions, unitName))
-        Library:Notify('ЁЯУМ #' .. #savedPositions .. ' [' .. unitName .. ']', 2)
+        print(string.format('[Units] 📌 #%d [%s]', #savedPositions, unitName))
+        Library:Notify('📌 #' .. #savedPositions .. ' [' .. unitName .. ']', 2)
     end,
 })
 
 UnitsGroup:AddButton({
-    Text = 'тЭМ ╨г╨┤╨░╨╗╨╕╤В╤М ╨┐╨╛╤Б╨╗╨╡╨┤╨╜╤О╤О',
+    Text = '❌ Удалить последнюю',
     Func = function()
         if #savedPositions == 0 then return end
         table.remove(savedPositions)
@@ -1131,7 +1131,7 @@ UnitsGroup:AddButton({
 })
 
 UnitsGroup:AddButton({
-    Text = 'ЁЯЧС Reset ALL',
+    Text = '🗑 Reset ALL',
     Func = function()
         savedPositions = {}
         updatePosLabel()
@@ -1140,62 +1140,62 @@ UnitsGroup:AddButton({
 })
 
 UnitsGroup:AddButton({
-    Text = 'ЁЯУЛ ╨б╨┐╨╕╤Б╨╛╨║ ╨▓ ╨║╨╛╨╜╤Б╨╛╨╗╤М (F9)',
+    Text = '📋 Список в консоль (F9)',
     Func = function()
         printPositionsList()
-        Library:Notify('ЁЯУЛ ╨б╨┐╨╕╤Б╨╛╨║ ╨▓╤Л╨▓╨╡╨┤╨╡╨╜ ╨▓ F9', 2)
+        Library:Notify('📋 Список выведен в F9', 2)
     end,
 })
 
 -- ============================================================
--- ╨Я╨╗╨╡╨╣╤Б╨╝╨╡╨╜╤В
+-- Плейсмент
 -- ============================================================
-local ActionGroup = Tabs.Units:AddRightGroupbox('тЪЩя╕П ╨Я╨╗╨╡╨╣╤Б╨╝╨╡╨╜╤В')
+local ActionGroup = Tabs.Units:AddRightGroupbox('⚙️ Плейсмент')
 
 ActionGroup:AddSlider('PosIndexSlider', {
-    Text = '╨Ш╨╜╨┤╨╡╨║╤Б ╨┐╨╛╨╖╨╕╤Ж╨╕╨╕', Default = 1, Min = 1, Max = 12, Rounding = 0, Compact = false,
+    Text = 'Индекс позиции', Default = 1, Min = 1, Max = 12, Rounding = 0, Compact = false,
     Callback = function(v) selectedPosIndex = v end,
 })
 
 _G.__yOffset = -2
 
 ActionGroup:AddSlider('YOffsetSlider', {
-    Text = 'ЁЯУЙ ╨б╨╝╨╡╤Й╨╡╨╜╨╕╨╡ Y',
+    Text = '📉 Смещение Y',
     Default = -2,
     Min = -20, Max = 10, Rounding = 1, Compact = false,
-    Tooltip = '╨Э╨░╤З╨╜╨╕ ╤Б -2, ╨╡╤Б╨╗╨╕ ╨╜╨╡ ╤А╨░╨▒╨╛╤В╨░╨╡╤В тАФ -5, -10',
+    Tooltip = 'Начни с -2, если не работает — -5, -10',
     Callback = function(v)
         _G.__yOffset = v
-        print('[Units] ╨б╨╝╨╡╤Й╨╡╨╜╨╕╨╡ Y =', v)
+        print('[Units] Смещение Y =', v)
     end,
 })
 
 _G.__placeDelay = 0.15
 ActionGroup:AddSlider('PlaceDelay', {
-    Text = 'тП▒ ╨Ч╨░╨┤╨╡╤А╨╢╨║╨░', Default = 0.15, Min = 0.05, Max = 2, Rounding = 2, Compact = false,
+    Text = '⏱ Задержка', Default = 0.15, Min = 0.05, Max = 2, Rounding = 2, Compact = false,
     Callback = function(v) _G.__placeDelay = v end,
 })
 
 ActionGroup:AddSlider('OccupiedRadius', {
-    Text = 'ЁЯУП ╨а╨░╨┤╨╕╤Г╤Б (0=╨▓╤Л╨║╨╗)', Default = 2, Min = 0, Max = 20, Rounding = 1, Compact = false,
+    Text = '📏 Радиус (0=выкл)', Default = 2, Min = 0, Max = 20, Rounding = 1, Compact = false,
     Callback = function(v) occupiedCheckRadius = v end,
 })
 
 ActionGroup:AddToggle('SkipOccupiedToggle', {
-    Text = 'тПн ╨Я╤А╨╛╨┐╤Г╤Б╨║╨░╤В╤М ╨╖╨░╨╜╤П╤В╤Л╨╡', Default = true,
+    Text = '⏭ Пропускать занятые', Default = true,
     Callback = function(v) skipOccupiedEnabled = v end,
 })
 
 ActionGroup:AddToggle('SkipExactToggle', {
-    Text = 'тПн ╨Э╨╡ ╨┤╤Г╨▒╨╗╨╕╤А╨╛╨▓╨░╤В╤М', Default = true,
+    Text = '⏭ Не дублировать', Default = true,
     Callback = function(v) skipExactEnabled = v end,
 })
 
 -- ============================================================
--- ЁЯОп placeUnitAt
+-- 🎯 placeUnitAt
 -- ============================================================
 local function placeUnitAt(positionData, useCFrame)
-    if not loadRemotes() then return false, 'Functions ╨╜╨╡╤В' end
+    if not loadRemotes() then return false, 'Functions нет' end
 
     local baseName = positionData.name
     local pos = positionData.pos
@@ -1203,21 +1203,21 @@ local function placeUnitAt(positionData, useCFrame)
     if skipOccupiedEnabled or skipExactEnabled then
         local occupied, who, isExact = checkOccupied(pos, baseName)
         if occupied then
-            if isExact and skipExactEnabled then return false, '╤Г╨╢╨╡ ╤Б╤В╨╛╨╕╤В' end
-            if not isExact and skipOccupiedEnabled then return false, '╨╖╨░╨╜╤П╤В╨╛' end
+            if isExact and skipExactEnabled then return false, 'уже стоит' end
+            if not isExact and skipOccupiedEnabled then return false, 'занято' end
         end
     end
 
     local slotData = findSlotByName(baseName)
     if not slotData then
-        return false, '╤Б╨╗╨╛╤В "' .. baseName .. '" ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜'
+        return false, 'слот "' .. baseName .. '" не найден'
     end
 
     if checkBalanceEnabled then
         local money = getMoney()
         local price = getPriceFromSlot(slotData.slot)
         if price and price > money then
-            return false, string.format('╨╜╤Г╨╢╨╜╨╛ %d, ╤Г ╤В╨╡╨▒╤П %d', price, money)
+            return false, string.format('нужно %d, у тебя %d', price, money)
         end
     end
 
@@ -1249,7 +1249,7 @@ local function placeUnitAt(positionData, useCFrame)
         return #a < #b
     end)
 
-    print('[Units] ЁЯУЛ ╨Т╨░╤А╨╕╨░╨╜╤В╤Л "' .. baseName .. '": ' .. table.concat(variants, ' | '))
+    print('[Units] 📋 Варианты "' .. baseName .. '": ' .. table.concat(variants, ' | '))
 
     if slotData.textButton then
         clickButton(slotData.textButton, true)
@@ -1282,25 +1282,25 @@ local function placeUnitAt(positionData, useCFrame)
             end)
 
             if ok2 and ret2 ~= false then
-                print('[Units] тЬЕ ' .. fullUnitId)
-                return true, 'тЬЕ ' .. fullUnitId
+                print('[Units] ✅ ' .. fullUnitId)
+                return true, '✅ ' .. fullUnitId
             end
         end
         task.wait(0.1)
     end
 
-    return false, '╨▓╤Б╨╡ ╨▓╨░╤А╨╕╨░╨╜╤В╤Л ╨╛╤В╨║╨╗╨╛╨╜╨╡╨╜╤Л'
+    return false, 'все варианты отклонены'
 end
 
 ActionGroup:AddButton({
-    Text = 'тЦ╢ Place',
+    Text = '▶ Place',
     Func = function()
-        if #savedPositions == 0 then Library:Notify('тЭМ ╨Э╨╡╤В ╨┐╨╛╨╖╨╕╤Ж╨╕╨╣', 3) return end
+        if #savedPositions == 0 then Library:Notify('❌ Нет позиций', 3) return end
         local idx = math.min(selectedPosIndex, #savedPositions)
         local p = savedPositions[idx]
         if not p then return end
         local ok, err = placeUnitAt(p, true)
-        Library:Notify(ok and ('тЬЕ #' .. idx) or ('тЭМ ' .. tostring(err)), 3)
+        Library:Notify(ok and ('✅ #' .. idx) or ('❌ ' .. tostring(err)), 3)
         updatePosLabel()
     end,
 })
@@ -1309,7 +1309,7 @@ local autoPlaceEnabled = false
 local autoPlaceInterval = 5
 
 ActionGroup:AddSlider('AutoPlaceInterval', {
-    Text = 'ЁЯФБ ╨Ш╨╜╤В╨╡╤А╨▓╨░╨╗ ╨░╨▓╤В╨╛', Default = 5, Min = 1, Max = 30, Rounding = 1, Compact = false,
+    Text = '🔁 Интервал авто', Default = 5, Min = 1, Max = 30, Rounding = 1, Compact = false,
     Callback = function(v) autoPlaceInterval = v end,
 })
 
@@ -1324,28 +1324,28 @@ runOnePlacePass = function()
 
         if ok then
             placed = placed + 1
-        elseif err and (err:find('╤Г╨╢╨╡ ╤Б╤В╨╛╨╕╤В') or err:find('╨╖╨░╨╜╤П╤В╨╛')) then
+        elseif err and (err:find('уже стоит') or err:find('занято')) then
             skipped = skipped + 1
-            print(string.format('[Units] тПн #%d [%s]: %s', i, p.name, tostring(err)))
+            print(string.format('[Units] ⏭ #%d [%s]: %s', i, p.name, tostring(err)))
         else
             failed = failed + 1
-            print(string.format('[Units] тЭМ #%d [%s]: %s', i, p.name, tostring(err)))
+            print(string.format('[Units] ❌ #%d [%s]: %s', i, p.name, tostring(err)))
         end
 
         updatePosLabel()
         task.wait(_G.__placeDelay or 0.15)
     end
 
-    print(string.format('[Units] ЁЯУК ╨Я╨╗╨╡╨╣╤Б╨╝╨╡╨╜╤В: тЬЕ%d | тЭМ%d | тПн%d', placed, failed, skipped))
+    print(string.format('[Units] 📊 Плейсмент: ✅%d | ❌%d | ⏭%d', placed, failed, skipped))
     return placed
 end
 
 ActionGroup:AddToggle('AutoPlaceToggle', {
-    Text = 'ЁЯФБ Auto Place', Default = false,
+    Text = '🔁 Auto Place', Default = false,
     Callback = function(Value)
         autoPlaceEnabled = Value
         if Value then
-            print('[Cycle] ЁЯФБ ╨ж╨╕╨║╨╗ ╨Т╨Ъ╨Ы')
+            print('[Cycle] 🔁 Цикл ВКЛ')
             task.spawn(function()
                 while autoPlaceEnabled do
                     runOnePlacePass()
@@ -1358,16 +1358,16 @@ ActionGroup:AddToggle('AutoPlaceToggle', {
                         end
                     end
                 end
-                print('[Cycle] тЦа ╨ж╨╕╨║╨╗ ╨Т╨л╨Ъ╨Ы')
+                print('[Cycle] ■ Цикл ВЫКЛ')
             end)
         end
     end,
 })
 
 -- ============================================================
--- тмЖя╕П AUTO UPGRADE
+-- ⬆️ AUTO UPGRADE
 -- ============================================================
-local UpgGroup = Tabs.Units:AddRightGroupbox('тмЖя╕П Auto Upgrade')
+local UpgGroup = Tabs.Units:AddRightGroupbox('⬆️ Auto Upgrade')
 
 local upgradeMode         = 'cheapest'
 local autoUpgradeEnabled  = false
@@ -1378,38 +1378,38 @@ local _manualUpgradeRun   = false
 local upgradeStats        = { session = 0, total = 0 }
 
 UpgGroup:AddDropdown('UpgradeMode', {
-    Values = { 'ЁЯТ░ ╨Ф╨╡╤И╤С╨▓╨╛╨╡ ╤Б╨╜╨░╤З╨░╨╗╨░', 'ЁЯТО ╨Ф╨╛╤А╨╛╨│╨╛╨╡ ╤Б╨╜╨░╤З╨░╨╗╨░', 'ЁЯФв ╨Я╨╛ ╨┐╨╛╤А╤П╨┤╨║╤Г' },
-    Default = 1, Multi = false, Text = '╨Я╤А╨╕╨╛╤А╨╕╤В╨╡╤В',
-    Tooltip = '╨Т ╨║╨░╨║╨╛╨╝ ╨┐╨╛╤А╤П╨┤╨║╨╡ ╨░╨┐╨│╤А╨╡╨╣╨┤╨╕╤В╤М ╤О╨╜╨╕╤В╤Л',
+    Values = { '💰 Дешёвое сначала', '💎 Дорогое сначала', '🔢 По порядку' },
+    Default = 1, Multi = false, Text = 'Приоритет',
+    Tooltip = 'В каком порядке апгрейдить юниты',
     Callback = function(Value)
-        if Value:find('╨Ф╨╡╤И╤С╨▓╨╛╨╡') then upgradeMode = 'cheapest'
-        elseif Value:find('╨Ф╨╛╤А╨╛╨│╨╛╨╡') then upgradeMode = 'expensive'
+        if Value:find('Дешёвое') then upgradeMode = 'cheapest'
+        elseif Value:find('Дорогое') then upgradeMode = 'expensive'
         else upgradeMode = 'order' end
-        print('[Upgrade] ╨а╨╡╨╢╨╕╨╝:', upgradeMode)
+        print('[Upgrade] Режим:', upgradeMode)
     end,
 })
 
 local filterDropdown
 filterDropdown = UpgGroup:AddDropdown('UpgradeFilter', {
-    Values = { '╨Т╤Б╨╡ ╤О╨╜╨╕╤В╤Л' },
-    Default = 1, Multi = false, Text = '╨д╨╕╨╗╤М╤В╤А ╤О╨╜╨╕╤В╨░',
-    Tooltip = '╨Р╨┐╨│╤А╨╡╨╣╨┤╨╕╤В╤М ╤В╨╛╨╗╤М╨║╨╛ ╨▓╤Л╨▒╤А╨░╨╜╨╜╤Л╨╣ ╤В╨╕╨┐ ╤О╨╜╨╕╤В╨░',
+    Values = { 'Все юниты' },
+    Default = 1, Multi = false, Text = 'Фильтр юнита',
+    Tooltip = 'Апгрейдить только выбранный тип юнита',
     Callback = function(Value)
-        if Value == '╨Т╤Б╨╡ ╤О╨╜╨╕╤В╤Л' or Value == '' then
+        if Value == 'Все юниты' or Value == '' then
             upgradeFilterName = nil
         else
             upgradeFilterName = Value
         end
-        print('[Upgrade] ╨д╨╕╨╗╤М╤В╤А:', tostring(upgradeFilterName))
+        print('[Upgrade] Фильтр:', tostring(upgradeFilterName))
     end,
 })
 
 UpgGroup:AddButton({
-    Text = 'ЁЯФД ╨Ю╨▒╨╜╨╛╨▓╨╕╤В╤М ╤Б╨┐╨╕╤Б╨╛╨║ ╤О╨╜╨╕╤В╨╛╨▓',
+    Text = '🔄 Обновить список юнитов',
     Func = function()
         local units = scanUnitManager()
         local seen = {}
-        local names = { '╨Т╤Б╨╡ ╤О╨╜╨╕╤В╤Л' }
+        local names = { 'Все юниты' }
         for _, u in ipairs(units) do
             if u.name and not seen[u.name] then
                 seen[u.name] = true
@@ -1417,30 +1417,30 @@ UpgGroup:AddButton({
             end
         end
         table.sort(names, function(a, b)
-            if a == '╨Т╤Б╨╡ ╤О╨╜╨╕╤В╤Л' then return true end
-            if b == '╨Т╤Б╨╡ ╤О╨╜╨╕╤В╤Л' then return false end
+            if a == 'Все юниты' then return true end
+            if b == 'Все юниты' then return false end
             return a < b
         end)
         filterDropdown:SetValues(names)
-        Library:Notify('ЁЯФД ╨о╨╜╨╕╤В╨╛╨▓: ' .. (#names - 1), 2)
+        Library:Notify('🔄 Юнитов: ' .. (#names - 1), 2)
     end,
 })
 
 UpgGroup:AddSlider('UpgradeInterval', {
-    Text = 'тП▒ ╨Ч╨░╨┤╨╡╤А╨╢╨║╨░ ╨╝╨╡╨╢╨┤╤Г ╨░╨┐╨│╤А╨╡╨╣╨┤╨░╨╝╨╕',
+    Text = '⏱ Задержка между апгрейдами',
     Default = 0.3, Min = 0.05, Max = 3, Rounding = 2, Compact = false,
-    Tooltip = '╨Я╨░╤Г╨╖╨░ ╨┐╨╛╤Б╨╗╨╡ ╨║╨░╨╢╨┤╨╛╨│╨╛ ╤Г╤Б╨┐╨╡╤И╨╜╨╛╨│╨╛ ╨░╨┐╨│╤А╨╡╨╣╨┤╨░',
+    Tooltip = 'Пауза после каждого успешного апгрейда',
     Callback = function(v) upgradeInterval = v end,
 })
 
 UpgGroup:AddSlider('UpgradeMaxPerPass', {
-    Text = 'ЁЯУК ╨Ь╨░╨║╤Б. ╨░╨┐╨│╤А╨╡╨╣╨┤╨╛╨▓ ╨╖╨░ ╨┐╤А╨╛╤Е╨╛╨┤',
+    Text = '📊 Макс. апгрейдов за проход',
     Default = 10, Min = 1, Max = 100, Rounding = 0,
-    Tooltip = '╨б╨║╨╛╨╗╤М╨║╨╛ ╤О╨╜╨╕╤В╨╛╨▓ ╨╝╨╛╨╢╨╜╨╛ ╨░╨┐╨│╤А╨╡╨╣╨┤╨╕╤В╤М ╨╖╨░ ╨╛╨┤╨╕╨╜ ╤Ж╨╕╨║╨╗',
+    Tooltip = 'Сколько юнитов можно апгрейдить за один цикл',
     Callback = function(v) upgradeMaxPerPass = v end,
 })
 
-local UpgStatusLabel = UpgGroup:AddLabel('╨о╨╜╨╕╤В╨╛╨▓: 0 | ╨Р╨┐╨│╤А╨╡╨╣╨┤╨╛╨▓: 0', false)
+local UpgStatusLabel = UpgGroup:AddLabel('Юнитов: 0 | Апгрейдов: 0', false)
 
 local function updateUpgStatus()
     local arr = scanUnitManager()
@@ -1454,7 +1454,7 @@ local function updateUpgStatus()
     end
     pcall(function()
         UpgStatusLabel:SetText(string.format(
-            '╨о╨╜╨╕╤В╨╛╨▓: %d (╤Д╨╕╨╗╤М╤В╤А: %d) | ╨У╨╛╤В╨╛╨▓╨╛: %d | MAX: %d | ╨Р╨┐╨│╤А╨╡╨╣╨┤╨╛╨▓: %d',
+            'Юнитов: %d (фильтр: %d) | Готово: %d | MAX: %d | Апгрейдов: %d',
             #arr, filtered, withPrice, maxed, upgradeStats.session
         ))
     end)
@@ -1537,7 +1537,7 @@ runOneUpgradePass = function()
     end
 
     if upgraded > 0 or skipped_money > 0 then
-        print(string.format('[Upgrade] тЬЕ%d | ЁЯТ░%d | ЁЯТОMAX:%d | тЭМ%d | ╨С╨░╨╗╨░╨╜╤Б: %d',
+        print(string.format('[Upgrade] ✅%d | 💰%d | 💎MAX:%d | ❌%d | Баланс: %d',
             upgraded, skipped_money, skipped_max, skipped_click, money))
     end
     updateUpgStatus()
@@ -1545,13 +1545,13 @@ runOneUpgradePass = function()
 end
 
 UpgGroup:AddToggle('AutoUpgradeToggle', {
-    Text = 'тмЖя╕П Auto Upgrade',
+    Text = '⬆️ Auto Upgrade',
     Default = false,
-    Tooltip = '╨Р╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╡╤Б╨║╨╕ ╨░╨┐╨│╤А╨╡╨╣╨┤╨╕╤В ╤О╨╜╨╕╤В╤Л ╨┐╨╛ ╨▓╤Л╨▒╤А╨░╨╜╨╜╨╛╨╝╤Г ╨┐╤А╨╕╨╛╤А╨╕╤В╨╡╤В╤Г',
+    Tooltip = 'Автоматически апгрейдит юниты по выбранному приоритету',
     Callback = function(Value)
         autoUpgradeEnabled = Value
         if Value then
-            print('[Upgrade] тмЖя╕П ╨Т╨Ъ╨Ы | ╤А╨╡╨╢╨╕╨╝:', upgradeMode, '| ╤Д╨╕╨╗╤М╤В╤А:', tostring(upgradeFilterName))
+            print('[Upgrade] ⬆️ ВКЛ | режим:', upgradeMode, '| фильтр:', tostring(upgradeFilterName))
             task.spawn(function()
                 local failStreak = 0
                 while autoUpgradeEnabled do
@@ -1565,14 +1565,14 @@ UpgGroup:AddToggle('AutoUpgradeToggle', {
                         task.wait(0.1)
                     end
                 end
-                print('[Upgrade] тЦа ╨Т╨л╨Ъ╨Ы')
+                print('[Upgrade] ■ ВЫКЛ')
             end)
         end
     end,
 })
 
 UpgGroup:AddButton({
-    Text = 'ЁЯФД ╨б╨▒╤А╨╛╤Б╨╕╤В╤М ╤Б╤З╤С╤В╤З╨╕╨║',
+    Text = '🔄 Сбросить счётчик',
     Func = function()
         upgradeStats.session = 0
         updateUpgStatus()
@@ -1580,18 +1580,18 @@ UpgGroup:AddButton({
 })
 
 UpgGroup:AddButton({
-    Text = 'тЦ╢ ╨в╨╡╤Б╤В: 1 ╨┐╤А╨╛╤Е╨╛╨┤',
+    Text = '▶ Тест: 1 проход',
     Func = function()
         _manualUpgradeRun = true
         local upg = runOneUpgradePass()
         _manualUpgradeRun = false
-        Library:Notify('тмЖя╕П ╨Р╨┐╨│╤А╨╡╨╣╨┤╨╛╨▓: ' .. tostring(upg), 2)
+        Library:Notify('⬆️ Апгрейдов: ' .. tostring(upg), 2)
     end,
 })
 
 task.spawn(function()
     while task.wait(1) do
-        pcall(function() MoneyLabel:SetText('ЁЯТ░ ╨С╨░╨╗╨░╨╜╤Б: ' .. tostring(getMoney())) end)
+        pcall(function() MoneyLabel:SetText('💰 Баланс: ' .. tostring(getMoney())) end)
         pcall(updatePosLabel)
     end
 end)
@@ -1607,7 +1607,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ЁЯЫб ANTI-AFK
+-- 🛡 ANTI-AFK
 -- ============================================================
 local ANTI_AFK_DELAY = 4.5
 
@@ -1629,7 +1629,7 @@ local function tryClickAntiMacro(screenGui)
                             end
                         end)
                     end
-                    print("[AntiAFK] тЬЕ ╨Э╨░╨╢╨░╨╗ 'I'm here'")
+                    print("[AntiAFK] ✅ Нажал 'I'm here'")
                     return true
                 end
             end
@@ -1656,7 +1656,7 @@ local function scanAllScreenGuis()
     end
 end
 
-local AntiAFKGroup = Tabs.Utilities:AddLeftGroupbox('ЁЯЫб Anti-AFK')
+local AntiAFKGroup = Tabs.Utilities:AddLeftGroupbox('🛡 Anti-AFK')
 local antiAfkEnabled = false
 local antiAfkConns = {}
 
@@ -1702,15 +1702,15 @@ local function setupAntiAFK()
 end
 
 AntiAFKGroup:AddToggle('AntiAFKToggle', {
-    Text = 'ЁЯЫбя╕П Anti-AFK',
+    Text = '🛡️ Anti-AFK',
     Default = true,
     Callback = function(Value)
         antiAfkEnabled = Value
         if Value then
-            print("[AntiAFK] тЦ╢ ╨Т╨Ъ╨Ы")
+            print("[AntiAFK] ▶ ВКЛ")
             setupAntiAFK()
         else
-            print("[AntiAFK] тЦа ╨Т╨л╨Ъ╨Ы")
+            print("[AntiAFK] ■ ВЫКЛ")
             for _, c in ipairs(antiAfkConns) do
                 pcall(function() c:Disconnect() end)
             end
@@ -1720,31 +1720,31 @@ AntiAFKGroup:AddToggle('AntiAFKToggle', {
 })
 
 AntiAFKGroup:AddSlider('AntiAFKDelay', {
-    Text = 'тП▒ ╨Ч╨░╨┤╨╡╤А╨╢╨║╨░ (╤Б╨╡╨║)',
+    Text = '⏱ Задержка (сек)',
     Default = 4.5,
     Min = 0, Max = 15, Rounding = 1, Compact = false,
     Callback = function(v) ANTI_AFK_DELAY = v end,
 })
 
 AntiAFKGroup:AddButton({
-    Text = 'ЁЯФН ╨Я╤А╨╛╨▓╨╡╤А╨╕╤В╤М ╤Б╨╡╨╣╤З╨░╤Б',
+    Text = '🔍 Проверить сейчас',
     Func = function()
         scanAllScreenGuis()
-        Library:Notify('ЁЯФН ╨б╨║╨░╨╜ ╨╖╨░╨┐╤Г╤Й╨╡╨╜', 2)
+        Library:Notify('🔍 Скан запущен', 2)
     end,
 })
 
 task.spawn(function()
     task.wait(1)
     antiAfkEnabled = true
-    print("[AntiAFK] тЦ╢ ╨Р╨▓╤В╨╛╨╖╨░╨┐╤Г╤Б╨║ (default=true)")
+    print("[AntiAFK] ▶ Автозапуск (default=true)")
     setupAntiAFK()
 end)
 
 -- ============================================================
--- ЁЯФБ AUTO REPLAY
+-- 🔁 AUTO REPLAY
 -- ============================================================
-local AutoReplayGroup = Tabs.Utilities:AddLeftGroupbox('ЁЯФБ Auto Replay')
+local AutoReplayGroup = Tabs.Utilities:AddLeftGroupbox('🔁 Auto Replay')
 local autoReplayEnabled = false
 local autoReplayConns = {}
 local autoReplayDelay = 1.5
@@ -1770,7 +1770,7 @@ local function tryClickReplay(reason)
     if rp.AbsoluteSize.X <= 0 or rp.AbsoluteSize.Y <= 0 then return false end
 
     local fired = clickButton(rp, true)
-    print(string.format('[AutoReplay] ЁЯЦ▒ ╨Ъ╨╗╨╕╨║ ╨┐╨╛ Replay (%s): %s', tostring(reason), fired and 'OK' or 'fail'))
+    print(string.format('[AutoReplay] 🖱 Клик по Replay (%s): %s', tostring(reason), fired and 'OK' or 'fail'))
     return fired
 end
 
@@ -1799,7 +1799,7 @@ local function watchEndScreen(es)
     local connR = es.ChildAdded:Connect(function(child)
         if not autoReplayEnabled then return end
         if child.Name == "Replay" then
-            print('[AutoReplay] ЁЯУ║ ╨Я╨╛╤П╨▓╨╕╨╗╤Б╤П Replay')
+            print('[AutoReplay] 📺 Появился Replay')
             if child:IsA("GuiObject") then
                 local connV2 = child:GetPropertyChangedSignal("Visible"):Connect(function()
                     if not autoReplayEnabled then return end
@@ -1847,7 +1847,7 @@ local function attachToGameGui(gg)
     local connES = gg.ChildAdded:Connect(function(child)
         if not autoReplayEnabled then return end
         if child.Name == "EndScreen" then
-            print('[AutoReplay] ЁЯУ║ ╨Я╨╛╤П╨▓╨╕╨╗╤Б╤П EndScreen')
+            print('[AutoReplay] 📺 Появился EndScreen')
             watchEndScreen(child)
 
             if child:IsA("GuiObject") then
@@ -1901,16 +1901,16 @@ local function setupAutoReplay()
 end
 
 AutoReplayGroup:AddToggle('AutoReplayToggle', {
-    Text = 'ЁЯФБ Auto Replay',
+    Text = '🔁 Auto Replay',
     Default = false,
-    Tooltip = '╨Ц╨╝╤С╤В Replay ╨║╨╛╨│╨┤╨░ EndScreen.Replay ╨┐╨╛╤П╨▓╨╗╤П╨╡╤В╤Б╤П / ╤Б╤В╨░╨╜╨╛╨▓╨╕╤В╤Б╤П Visible',
+    Tooltip = 'Жмёт Replay когда EndScreen.Replay появляется / становится Visible',
     Callback = function(Value)
         autoReplayEnabled = Value
         if Value then
-            print('[AutoReplay] тЦ╢ ╨Т╨Ъ╨Ы')
+            print('[AutoReplay] ▶ ВКЛ')
             setupAutoReplay()
         else
-            print('[AutoReplay] тЦа ╨Т╨л╨Ъ╨Ы')
+            print('[AutoReplay] ■ ВЫКЛ')
             for _, c in ipairs(autoReplayConns) do
                 pcall(function() c:Disconnect() end)
             end
@@ -1920,44 +1920,44 @@ AutoReplayGroup:AddToggle('AutoReplayToggle', {
 })
 
 AutoReplayGroup:AddSlider('AutoReplayDelay', {
-    Text = 'тП▒ ╨Ч╨░╨┤╨╡╤А╨╢╨║╨░ ╨┐╨╡╤А╨╡╨┤ ╨║╨╗╨╕╨║╨╛╨╝ (╤Б╨╡╨║)',
+    Text = '⏱ Задержка перед кликом (сек)',
     Default = 1.5, Min = 0, Max = 10, Rounding = 1, Compact = false,
-    Tooltip = '╨Я╨░╤Г╨╖╨░ ╨╝╨╡╨╢╨┤╤Г ╨┐╨╛╤П╨▓╨╗╨╡╨╜╨╕╨╡╨╝ Replay ╨╕ ╨║╨╗╨╕╨║╨╛╨╝',
+    Tooltip = 'Пауза между появлением Replay и кликом',
     Callback = function(v) autoReplayDelay = v end,
 })
 
 AutoReplayGroup:AddButton({
-    Text = 'ЁЯФН ╨в╨╡╤Б╤В: ╨╜╨░╨╢╨░╤В╤М Replay ╤Б╨╡╨╣╤З╨░╤Б',
+    Text = '🔍 Тест: нажать Replay сейчас',
     Func = function()
         local es = getEndScreen()
-        if not es then Library:Notify('тЭМ EndScreen ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜', 3) return end
-        if not es.Visible then Library:Notify('тЭМ EndScreen ╤Б╨║╤А╤Л╤В', 3) return end
+        if not es then Library:Notify('❌ EndScreen не найден', 3) return end
+        if not es.Visible then Library:Notify('❌ EndScreen скрыт', 3) return end
         local rp = es:FindFirstChild("Replay")
-        if not rp then Library:Notify('тЭМ Replay ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜', 3) return end
+        if not rp then Library:Notify('❌ Replay не найден', 3) return end
         local fired = clickButton(rp, true)
-        Library:Notify(fired and 'ЁЯФБ ╨Ъ╨╗╨╕╨║ ╨╛╤В╨┐╤А╨░╨▓╨╗╨╡╨╜' or 'тЭМ ╨Ъ╨╗╨╕╨║ ╨╜╨╡ ╤Б╤А╨░╨▒╨╛╤В╨░╨╗', 2)
+        Library:Notify(fired and '🔁 Клик отправлен' or '❌ Клик не сработал', 2)
     end,
 })
 
 AutoReplayGroup:AddButton({
-    Text = 'ЁЯУК ╨Ф╨╕╨░╨│╨╜╨╛╤Б╤В╨╕╨║╨░ EndScreen',
+    Text = '📊 Диагностика EndScreen',
     Func = function()
         local playerGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
-        if not playerGui then print('[Diag] PlayerGui ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜') return end
+        if not playerGui then print('[Diag] PlayerGui не найден') return end
 
         local gameGui = playerGui:FindFirstChild("GameGui")
-        print('[Diag] GameGui:', gameGui and 'тЬЕ' or 'тЭМ')
+        print('[Diag] GameGui:', gameGui and '✅' or '❌')
 
         if gameGui then
             local endScreen = gameGui:FindFirstChild("EndScreen")
-            print('[Diag] EndScreen:', endScreen and 'тЬЕ' or 'тЭМ')
+            print('[Diag] EndScreen:', endScreen and '✅' or '❌')
 
             if endScreen then
                 print('[Diag] EndScreen.Visible:', endScreen.Visible)
                 print('[Diag] EndScreen.ClassName:', endScreen.ClassName)
 
                 local replay = endScreen:FindFirstChild("Replay")
-                print('[Diag] Replay:', replay and 'тЬЕ' or 'тЭМ')
+                print('[Diag] Replay:', replay and '✅' or '❌')
 
                 if replay then
                     print('[Diag] Replay.ClassName:', replay.ClassName)
@@ -1965,7 +1965,7 @@ AutoReplayGroup:AddButton({
                     print('[Diag] Replay.AbsoluteSize:', tostring(replay.AbsoluteSize))
                 end
 
-                print('[Diag] ╨Ф╨╡╤В╨╕ EndScreen:')
+                print('[Diag] Дети EndScreen:')
                 for _, c in ipairs(endScreen:GetChildren()) do
                     print('  - ' .. c.Name .. ' [' .. c.ClassName .. '] Visible=' .. tostring(c.Visible))
                 end
@@ -1975,9 +1975,9 @@ AutoReplayGroup:AddButton({
 })
 
 -- ============================================================
--- ЁЯзм AUTO MUTATION
+-- 🧬 AUTO MUTATION
 -- ============================================================
-local AutoMutationGroup = Tabs.Utilities:AddLeftGroupbox('ЁЯзм Auto Mutation')
+local AutoMutationGroup = Tabs.Utilities:AddLeftGroupbox('🧬 Auto Mutation')
 
 local autoMutationEnabled = false
 local selectedMutator = 'None'
@@ -2019,7 +2019,7 @@ local function clickMutator()
 
     local target = folder:FindFirstChild(selectedMutator)
     if not target then
-        print('[AutoMutation] тЭМ "' .. selectedMutator .. '" ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜')
+        print('[AutoMutation] ❌ "' .. selectedMutator .. '" не найден')
         return false
     end
 
@@ -2034,12 +2034,12 @@ local function clickMutator()
     end
 
     if #buttons == 0 then
-        print('[AutoMutation] тЪа ╨Т "' .. selectedMutator .. '" ╨╜╨╡╤В ╨║╨╜╨╛╨┐╨╛╨║')
+        print('[AutoMutation] ⚠ В "' .. selectedMutator .. '" нет кнопок')
         pcall(function() target:Activate() end)
         return false
     end
 
-    print('[AutoMutation] ЁЯЦ▒ ╨Ъ╨╜╨╛╨┐╨╛╨║ ╨▓ "' .. selectedMutator .. '": ' .. #buttons)
+    print('[AutoMutation] 🖱 Кнопок в "' .. selectedMutator .. '": ' .. #buttons)
 
     local anyFired = false
 
@@ -2093,7 +2093,7 @@ local function clickMutator()
         end
     end
 
-    print('[AutoMutation] тЬЕ ╨Ъ╨╗╨╕╨║ ╨┐╨╛ "' .. selectedMutator .. '"')
+    print('[AutoMutation] ✅ Клик по "' .. selectedMutator .. '"')
     return anyFired
 end
 
@@ -2110,7 +2110,7 @@ local function closeMutatorMenu()
             if nm:find("close") or nm:find("confirm") or nm:find("submit")
                or nm:find("done") or nm:find("ok")
                or txt:find("confirm") or txt:find("done")
-               or txt:find("╨┐╨╛╨┤╤В╨▓╨╡╤А╨┤") or txt:find("╨╛╨║") then
+               or txt:find("подтверд") or txt:find("ок") then
                 closeBtn = d
                 break
             end
@@ -2119,12 +2119,12 @@ local function closeMutatorMenu()
 
     if closeBtn then
         clickButton(closeBtn, true)
-        print('[AutoMutation] ЁЯЪк ╨Э╨░╨╢╨░╨╗ ╨╖╨░╨║╤А╤Л╤В╨╕╨╡ ╨╝╨╡╨╜╤О:', closeBtn:GetFullName())
+        print('[AutoMutation] 🚪 Нажал закрытие меню:', closeBtn:GetFullName())
     else
         pcall(function()
             slopGui.Enabled = false
         end)
-        print('[AutoMutation] ЁЯЪк ╨б╨║╤А╤Л╨╗ SlopMutatorGui (╨║╨╜╨╛╨┐╨║╨░ ╨╖╨░╨║╤А╤Л╤В╨╕╤П ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░)')
+        print('[AutoMutation] 🚪 Скрыл SlopMutatorGui (кнопка закрытия не найдена)')
     end
 end
 
@@ -2144,9 +2144,9 @@ local function stopAutoMutation(reason)
         end
     end)
 
-    print('[AutoMutation] ЁЯЫС ╨б╨в╨Ю╨Я (' .. tostring(reason) .. ') тАФ ╨▒╨╛╨╗╤М╤И╨╡ ╨╜╨╡ ╨┐╤А╨╛╨▓╨╡╤А╤П╤О')
+    print('[AutoMutation] 🛑 СТОП (' .. tostring(reason) .. ') — больше не проверяю')
     pcall(function()
-        Library:Notify('ЁЯЫС Auto Mutation ╨╛╤Б╤В╨░╨╜╨╛╨▓╨╗╨╡╨╜: ' .. tostring(reason), 3)
+        Library:Notify('🛑 Auto Mutation остановлен: ' .. tostring(reason), 3)
     end)
 end
 
@@ -2154,13 +2154,13 @@ local function watchMobs(mobsFolder)
     if not mobsFolder then return end
 
     if #mobsFolder:GetChildren() > 0 then
-        stopAutoMutation("╤Г╨╢╨╡ ╨╡╤Б╤В╤М ╨╝╨╛╨▒╤Л")
+        stopAutoMutation("уже есть мобы")
         return
     end
 
     local conn = mobsFolder.ChildAdded:Connect(function()
         if not autoMutationEnabled or _G.__autoMutationUsed then return end
-        stopAutoMutation("╨┐╨╛╤П╨▓╨╕╨╗╤Б╤П ╨┐╨╡╤А╨▓╤Л╨╣ ╨╝╨╛╨▒")
+        stopAutoMutation("появился первый моб")
     end)
     table.insert(autoMutationConns, conn)
 end
@@ -2172,7 +2172,7 @@ local function setupAutoMutation()
     autoMutationConns = {}
 
     if _G.__autoMutationUsed then
-        print('[AutoMutation] тЪа ╨г╨╢╨╡ ╤Б╤А╨░╨▒╨╛╤В╨░╨╗ тАФ ╨╜╨╡ ╨╖╨░╨┐╤Г╤Б╨║╨░╤О')
+        print('[AutoMutation] ⚠ Уже сработал — не запускаю')
         return
     end
 
@@ -2184,7 +2184,7 @@ local function setupAutoMutation()
     local connGui = playerGui.ChildAdded:Connect(function(child)
         if not autoMutationEnabled or _G.__autoMutationUsed then return end
         if child.Name == "SlopMutatorGui" then
-            print('[AutoMutation] ЁЯУ║ ╨Я╨╛╤П╨▓╨╕╨╗╤Б╤П SlopMutatorGui')
+            print('[AutoMutation] 📺 Появился SlopMutatorGui')
             task.wait(0.5)
 
             local voting = child:FindFirstChild("MutatorVoting")
@@ -2246,37 +2246,37 @@ mutatorDropdown = AutoMutationGroup:AddDropdown('MutatorSelect', {
     Values = { 'None' },
     Default = 'None',
     Multi = false,
-    Text = '╨Ь╤Г╤В╨░╤Ж╨╕╤П',
-    Tooltip = '╨Ъ╨░╨║╤Г╤О ╨╝╤Г╤В╨░╤Ж╨╕╤О ╨▓╤Л╨▒╨╕╤А╨░╤В╤М ╨░╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╡╤Б╨║╨╕',
+    Text = 'Мутация',
+    Tooltip = 'Какую мутацию выбирать автоматически',
     Callback = function(Value)
         selectedMutator = Value or 'None'
-        print('[AutoMutation] ╨Т╤Л╨▒╤А╨░╨╜╨╛:', selectedMutator)
+        print('[AutoMutation] Выбрано:', selectedMutator)
     end,
 })
 
 AutoMutationGroup:AddButton({
-    Text = 'ЁЯФД ╨Ю╨▒╨╜╨╛╨▓╨╕╤В╤М ╤Б╨┐╨╕╤Б╨╛╨║ ╨╝╤Г╤В╨░╤Ж╨╕╨╣',
+    Text = '🔄 Обновить список мутаций',
     Func = function()
         local list = scanMutators()
         if #list == 0 then
-            Library:Notify('тЭМ MutatorVoting ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜. ╨Ю╤В╨║╤А╨╛╨╣ ╨╛╨║╨╜╨╛ ╨▓╤Л╨▒╨╛╤А╨░ ╨╝╤Г╤В╨░╤Ж╨╕╨╕.', 3)
+            Library:Notify('❌ MutatorVoting не найден. Открой окно выбора мутации.', 3)
             return
         end
         mutatorDropdown:SetValues(list)
-        Library:Notify('ЁЯФД ╨Э╨░╨╣╨┤╨╡╨╜╨╛: ' .. table.concat(list, ', '), 3)
-        print('[AutoMutation] ╨Ф╨╛╤Б╤В╤Г╨┐╨╜╨╛:', table.concat(list, ', '))
+        Library:Notify('🔄 Найдено: ' .. table.concat(list, ', '), 3)
+        print('[AutoMutation] Доступно:', table.concat(list, ', '))
     end,
 })
 
 AutoMutationGroup:AddToggle('AutoMutationToggle', {
-    Text = 'ЁЯзм Auto Mutation',
+    Text = '🧬 Auto Mutation',
     Default = false,
-    Tooltip = '╨Р╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╡╤Б╨║╨╕ ╨╢╨╝╤С╤В ╨▓╤Л╨▒╤А╨░╨╜╨╜╤Г╤О ╨╝╤Г╤В╨░╤Ж╨╕╤О ╨┐╤А╨╕ ╨┐╨╛╤П╨▓╨╗╨╡╨╜╨╕╨╕ (1 ╤А╨░╨╖ ╨╖╨░ ╤Б╨╡╤Б╤Б╨╕╤О)',
+    Tooltip = 'Автоматически жмёт выбранную мутацию при появлении (1 раз за сессию)',
     Callback = function(Value)
         autoMutationEnabled = Value
         if Value then
             if _G.__autoMutationUsed then
-                Library:Notify('тЪа ╨г╨╢╨╡ ╤Б╤А╨░╨▒╨╛╤В╨░╨╗ тАФ ╨┐╨╡╤А╨╡╨╖╨░╨┐╤Г╤Б╤В╨╕ ╤Б╨║╤А╨╕╨┐╤В', 3)
+                Library:Notify('⚠ Уже сработал — перезапусти скрипт', 3)
                 pcall(function()
                     if Library.Options and Library.Options.AutoMutationToggle then
                         Library.Options.AutoMutationToggle:SetValue(false)
@@ -2284,14 +2284,14 @@ AutoMutationGroup:AddToggle('AutoMutationToggle', {
                 end)
                 return
             end
-            print('[AutoMutation] тЦ╢ ╨Т╨Ъ╨Ы, ╤Ж╨╡╨╗╤М: ' .. selectedMutator)
+            print('[AutoMutation] ▶ ВКЛ, цель: ' .. selectedMutator)
             local list = scanMutators()
             if #list > 0 then
                 mutatorDropdown:SetValues(list)
             end
             setupAutoMutation()
         else
-            print('[AutoMutation] тЦа ╨Т╨л╨Ъ╨Ы')
+            print('[AutoMutation] ■ ВЫКЛ')
             for _, c in ipairs(autoMutationConns) do
                 pcall(function() c:Disconnect() end)
             end
@@ -2301,31 +2301,31 @@ AutoMutationGroup:AddToggle('AutoMutationToggle', {
 })
 
 AutoMutationGroup:AddButton({
-    Text = 'ЁЯФН ╨в╨╡╤Б╤В: ╨║╨╗╨╕╨║╨╜╤Г╤В╤М ╤Б╨╡╨╣╤З╨░╤Б',
+    Text = '🔍 Тест: кликнуть сейчас',
     Func = function()
         local ok = clickMutator()
         if ok then
             task.wait(0.5)
             closeMutatorMenu()
-            Library:Notify('ЁЯзм ╨Ъ╨╗╨╕╨║ ╨┐╨╛ "' .. selectedMutator .. '" + ╨╖╨░╨║╤А╤Л╤В╨╕╨╡', 2)
+            Library:Notify('🧬 Клик по "' .. selectedMutator .. '" + закрытие', 2)
         else
-            Library:Notify('тЭМ ╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨║╨╗╨╕╨║╨╜╤Г╤В╤М', 3)
+            Library:Notify('❌ Не удалось кликнуть', 3)
         end
     end,
 })
 
 AutoMutationGroup:AddButton({
-    Text = 'ЁЯУК ╨Ф╨╕╨░╨│╨╜╨╛╤Б╤В╨╕╨║╨░ MutatorVoting',
+    Text = '📊 Диагностика MutatorVoting',
     Func = function()
         local folder = getMutatorVoting()
         print('========== MutatorVoting ==========')
         if not folder then
-            print('тЭМ ╨Э╨╡ ╨╜╨░╨╣╨┤╨╡╨╜. ╨Ю╤В╨║╤А╨╛╨╣ SlopMutatorGui ╨▓ ╨╕╨│╤А╨╡.')
+            print('❌ Не найден. Открой SlopMutatorGui в игре.')
             return
         end
 
         print('Visible:', folder.Visible)
-        print('╨Ф╨╡╤В╨╕:')
+        print('Дети:')
         for _, c in ipairs(folder:GetChildren()) do
             if c:IsA("GuiObject") then
                 local btn = nil
@@ -2340,7 +2340,7 @@ AutoMutationGroup:AddButton({
                     end
                 end
                 print(string.format('  %s [%s] Visible=%s Clickable=%s',
-                    c.Name, c.ClassName, tostring(c.Visible), btn and 'тЬЕ' or 'тЭМ'))
+                    c.Name, c.ClassName, tostring(c.Visible), btn and '✅' or '❌'))
             end
         end
         print('===================================')
@@ -2360,17 +2360,17 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ЁЯФД AUTO-LOAD / AUTO-INJECT (╨┐╨╡╤А╨╡╨╖╨░╨│╤А╤Г╨╖╨║╨░ ╤Б╨║╤А╨╕╨┐╤В╨░ ╨┐╨╛╤Б╨╗╨╡ ╤В╨╡╨╗╨╡╨┐╨╛╤А╤В╨░/╤А╨╡╤Б╨┐╨░╨▓╨╜╨░)
+-- 🔄 AUTO-LOAD / AUTO-INJECT (перезагрузка скрипта после телепорта/респавна)
 -- ============================================================
-local AutoLoadGroup = Tabs.Utilities:AddLeftGroupbox('ЁЯФД Auto-Load Script')
+local AutoLoadGroup = Tabs.Utilities:AddLeftGroupbox('🔄 Auto-Load Script')
 
 local AUTOLOAD_URL_FILE   = 'AutoVoteMenu/autoload_url.txt'
 local AUTOLOAD_STATE_FILE = 'AutoVoteMenu/autoload_state.txt'
 
--- ЁЯОп URL ╨┐╨╛ ╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О (╨╝╨╛╨╢╨╜╨╛ ╨┐╨╛╨╝╨╡╨╜╤П╤В╤М ╨▓ UI)
+-- 🎯 URL по умолчанию (можно поменять в UI)
 local DEFAULT_AUTOLOAD_URL = 'https://raw.githubusercontent.com/Zecb/jono222/main/ner/Script.lua'
 
--- ЁЯОп ╨Я╨╛╨╕╤Б╨║ ╤Д╤Г╨╜╨║╤Ж╨╕╨╕ queue_on_teleport ╤Г ╤А╨░╨╖╨╜╤Л╤Е ╤Н╨║╨╖╨╡╨║╤М╤О╤В╨╛╤А╨╛╨▓
+-- 🎯 Поиск функции queue_on_teleport у разных экзекьюторов
 local function getQueueFn()
     if queue_on_teleport       then return queue_on_teleport       end
     if queueonteleport         then return queueonteleport         end
@@ -2379,7 +2379,7 @@ local function getQueueFn()
     return nil
 end
 
--- ЁЯОп ╨б╨╛╨▒╨╕╤А╨░╨╡╤В loader, ╨║╨╛╤В╨╛╤А╤Л╨╣ ╨▓╤Л╨┐╨╛╨╗╨╜╨╕╤В╤Б╤П ╨╜╨░ ╨╜╨╛╨▓╨╛╨╣ ╤Б╤В╨╛╤А╨╛╨╜╨╡
+-- 🎯 Собирает loader, который выполнится на новой стороне
 local function buildLoader(url)
     return string.format([[
         -- AutoLoad Loader
@@ -2391,11 +2391,11 @@ local function buildLoader(url)
         local ok, err = pcall(function()
             loadstring(game:HttpGet(%q))()
         end)
-        if not ok then warn("[AutoLoad] тЭМ ╨Ю╤И╨╕╨▒╨║╨░:", tostring(err)) end
+        if not ok then warn("[AutoLoad] ❌ Ошибка:", tostring(err)) end
     ]], url)
 end
 
--- ЁЯОп ╨з╨╕╤В╨░╨╡╤В URL ╨╕╨╖ ╤Д╨░╨╣╨╗╨░
+-- 🎯 Читает URL из файла
 local function loadSavedURL()
     if not readfile or not isfile then return nil end
     local exists = false
@@ -2407,7 +2407,7 @@ local function loadSavedURL()
     return url:gsub('%s+', '')
 end
 
--- ЁЯОп ╨б╨╛╤Е╤А╨░╨╜╤П╨╡╤В URL
+-- 🎯 Сохраняет URL
 local function saveURL(url)
     if not writefile then return false end
     return pcall(function()
@@ -2416,33 +2416,33 @@ local function saveURL(url)
     end)
 end
 
--- ЁЯОп ╨Ч╨░╤Й╨╕╤В╨░ ╨╛╤В ╨┐╨╛╨▓╤В╨╛╤А╨╜╨╛╨╣ ╨┐╨╛╤Б╤В╨░╨╜╨╛╨▓╨║╨╕: ╨╛╤З╨╡╤А╨╡╨┤╤М ╨┤╨╛╨╗╨╢╨╜╨░ ╤Б╨╛╨┤╨╡╤А╨╢╨░╤В╤М ╤А╨╛╨▓╨╜╨╛ 1 loader
+-- 🎯 Защита от повторной постановки: очередь должна содержать ровно 1 loader
 local _autoloadQueued = false
 
--- ЁЯОп ╨Ю╤Б╨╜╨╛╨▓╨╜╨░╤П ╤Д╤Г╨╜╨║╤Ж╨╕╤П: ╨┐╨╛╤Б╤В╨░╨▓╨╕╤В╤М ╤Б╨║╤А╨╕╨┐╤В ╨▓ ╨╛╤З╨╡╤А╨╡╨┤╤М ╨╜╨░ ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╣ ╤В╨╡╨╗╨╡╨┐╨╛╤А╤В
+-- 🎯 Основная функция: поставить скрипт в очередь на следующий телепорт
 local function doQueueAutoLoad()
     if _autoloadQueued then
         return true, nil
     end
     local queueFn = getQueueFn()
     if not queueFn then
-        return false, 'queue_on_teleport ╨╜╨╡╨┤╨╛╤Б╤В╤Г╨┐╨╡╨╜'
+        return false, 'queue_on_teleport недоступен'
     end
     local url = loadSavedURL() or DEFAULT_AUTOLOAD_URL
     if not url then
-        return false, 'URL ╨╜╨╡ ╨╖╨░╨┤╨░╨╜'
+        return false, 'URL не задан'
     end
     local ok = pcall(function() queueFn(buildLoader(url)) end)
     if ok then
         _autoloadQueued = true
-        print('[AutoLoad] тЬЕ ╨б╨║╤А╨╕╨┐╤В ╨┐╨╛╤Б╤В╨░╨▓╨╗╨╡╨╜ ╨▓ ╨╛╤З╨╡╤А╨╡╨┤╤М: ' .. url)
+        print('[AutoLoad] ✅ Скрипт поставлен в очередь: ' .. url)
     end
     return ok, nil
 end
 
--- ЁЯОп UI
+-- 🎯 UI
 local URLInputOpt = AutoLoadGroup:AddInput('AutoLoadURL', {
-    Text = 'ЁЯМР URL ╤Б╨║╤А╨╕╨┐╤В╨░ (raw GitHub ╨╕ ╤В.╨┐.)',
+    Text = '🌐 URL скрипта (raw GitHub и т.п.)',
     Default = DEFAULT_AUTOLOAD_URL,
     Placeholder = 'https://raw.githubusercontent.com/user/repo/main/script.lua',
     Numeric = false,
@@ -2450,37 +2450,37 @@ local URLInputOpt = AutoLoadGroup:AddInput('AutoLoadURL', {
     Callback = function(v)
         if not v or v == '' then return end
         if saveURL(v) then
-            print('[AutoLoad] ЁЯМР URL ╤Б╨╛╤Е╤А╨░╨╜╤С╨╜:', v)
+            print('[AutoLoad] 🌐 URL сохранён:', v)
         end
     end,
 })
 
-AutoLoadGroup:AddLabel('ЁЯУМ URL ╨┐╨╛ ╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О ╤Г╨╢╨╡ ╨┐╤А╨╛╨┐╨╕╤Б╨░╨╜', false)
+AutoLoadGroup:AddLabel('📌 URL по умолчанию уже прописан', false)
 
 AutoLoadGroup:AddButton({
-    Text = 'ЁЯТ╛ ╨б╨╛╤Е╤А╨░╨╜╨╕╤В╤М URL',
+    Text = '💾 Сохранить URL',
     Func = function()
         local url = URLInputOpt.Value
         if not url or url == '' then
-            Library:Notify('тЭМ ╨Т╨▓╨╡╨┤╨╕ URL', 3)
+            Library:Notify('❌ Введи URL', 3)
             return
         end
         if saveURL(url) then
-            Library:Notify('ЁЯТ╛ URL ╤Б╨╛╤Е╤А╨░╨╜╤С╨╜', 2)
+            Library:Notify('💾 URL сохранён', 2)
         else
-            Library:Notify('тЭМ writefile ╨╜╨╡╨┤╨╛╤Б╤В╤Г╨┐╨╡╨╜', 3)
+            Library:Notify('❌ writefile недоступен', 3)
         end
     end,
 })
 
 AutoLoadGroup:AddButton({
-    Text = 'ЁЯЪА ╨Ч╨░╤Б╨║╤А╨╕╨┐╤В╨╛╨▓╨░╤В╤М ╤Б╨╡╨╣╤З╨░╤Б (1 ╤А╨░╨╖)',
+    Text = '🚀 Заскриптовать сейчас (1 раз)',
     Func = function()
         local ok, err = doQueueAutoLoad()
         if ok then
-            Library:Notify('ЁЯЪА ╨Я╨╛╤Б╤В╨░╨▓╨╗╨╡╨╜╨╛ ╨╜╨░ ╤Б╨╗╨╡╨┤. ╤В╨╡╨╗╨╡╨┐╨╛╤А╤В', 3)
+            Library:Notify('🚀 Поставлено на след. телепорт', 3)
         else
-            Library:Notify('тЭМ ' .. tostring(err), 3)
+            Library:Notify('❌ ' .. tostring(err), 3)
         end
     end,
 })
@@ -2488,9 +2488,9 @@ AutoLoadGroup:AddButton({
 local autoLoadEnabled = false
 
 AutoLoadGroup:AddToggle('AutoLoadToggle', {
-    Text = 'ЁЯФД ╨Р╨▓╤В╨╛-╨╖╨░╨│╤А╤Г╨╖╨║╨░ ╤Б╨║╤А╨╕╨┐╤В╨░ ╨┐╨╛╤Б╨╗╨╡ ╤В╨╡╨╗╨╡╨┐╨╛╤А╤В╨░',
+    Text = '🔄 Авто-загрузка скрипта после телепорта',
     Default = false,
-    Tooltip = '╨б╨║╤А╨╕╨┐╤В ╤Б╨░╨╝ ╤Б╨╡╨▒╤П ╨┐╨╡╤А╨╡╨╖╨░╨┐╤Г╤Б╤В╨╕╤В ╨┐╨╛╤Б╨╗╨╡ ╤А╨╡╤Б╨┐╨░╨▓╨╜╨░/╤А╨╡╨╕╨╜╨╢╨╛╨╕╨╜╨░/╤В╨╡╨╗╨╡╨┐╨╛╤А╤В╨░',
+    Tooltip = 'Скрипт сам себя перезапустит после респавна/реинжоина/телепорта',
     Callback = function(Value)
         autoLoadEnabled = Value
         if writefile then
@@ -2502,44 +2502,44 @@ AutoLoadGroup:AddToggle('AutoLoadToggle', {
         if Value then
             local ok, err = doQueueAutoLoad()
             if not ok then
-                Library:Notify('тЭМ ' .. tostring(err), 3)
+                Library:Notify('❌ ' .. tostring(err), 3)
                 autoLoadEnabled = false
                 pcall(function()
                     Library.Options.AutoLoadToggle:SetValue(false)
                 end)
             else
-                Library:Notify('ЁЯФД Auto-Load ╨Т╨Ъ╨Ы', 2)
+                Library:Notify('🔄 Auto-Load ВКЛ', 2)
             end
         end
     end,
 })
 
 AutoLoadGroup:AddButton({
-    Text = 'ЁЯФО ╨Ф╨╕╨░╨│╨╜╨╛╤Б╤В╨╕╨║╨░',
+    Text = '🔎 Диагностика',
     Func = function()
         print('========== AutoLoad ==========')
-        print('queue_on_teleport:', queue_on_teleport and 'тЬЕ' or 'тЭМ')
-        print('queueonteleport:', queueonteleport and 'тЬЕ' or 'тЭМ')
+        print('queue_on_teleport:', queue_on_teleport and '✅' or '❌')
+        print('queueonteleport:', queueonteleport and '✅' or '❌')
         print('syn.queue_on_teleport:',
-            (syn and syn.queue_on_teleport) and 'тЬЕ' or 'тЭМ')
+            (syn and syn.queue_on_teleport) and '✅' or '❌')
         print('fluxus.queue_on_teleport:',
-            (fluxus and fluxus.queue_on_teleport) and 'тЬЕ' or 'тЭМ')
-        print('readfile:', readfile and 'тЬЕ' or 'тЭМ')
-        print('writefile:', writefile and 'тЬЕ' or 'тЭМ')
-        print('URL:', loadSavedURL() or ('(╨┐╨╛ ╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О) ' .. DEFAULT_AUTOLOAD_URL))
+            (fluxus and fluxus.queue_on_teleport) and '✅' or '❌')
+        print('readfile:', readfile and '✅' or '❌')
+        print('writefile:', writefile and '✅' or '❌')
+        print('URL:', loadSavedURL() or ('(по умолчанию) ' .. DEFAULT_AUTOLOAD_URL))
         print('Enabled:', tostring(autoLoadEnabled))
         print('==============================')
     end,
 })
 
--- ЁЯОп ╨Т╨╛╤Б╤Б╤В╨░╨╜╨╛╨▓╨╗╨╡╨╜╨╕╨╡ URL ╨╕ ╤Б╨╛╤Б╤В╨╛╤П╨╜╨╕╤П ╨┐╤А╨╕ ╨╖╨░╨│╤А╤Г╨╖╨║╨╡
+-- 🎯 Восстановление URL и состояния при загрузке
 task.spawn(function()
     task.wait(1)
     local url = loadSavedURL()
     if url then
         pcall(function() URLInputOpt:SetValue(url) end)
     else
-        -- ╤Б╨╛╤Е╤А╨░╨╜╤П╨╡╨╝ ╨┤╨╡╤Д╨╛╨╗╤В ╨┐╤А╨╕ ╨┐╨╡╤А╨▓╨╛╨╝ ╨╖╨░╨┐╤Г╤Б╨║╨╡
+        -- сохраняем дефолт при первом запуске
         pcall(saveURL, DEFAULT_AUTOLOAD_URL)
     end
     if readfile and isfile then
@@ -2558,13 +2558,13 @@ task.spawn(function()
     end
 end)
 
--- ЁЯОп ╨е╤Г╨║ OnTeleport ╨╜╨░╨╝╨╡╤А╨╡╨╜╨╜╨╛ ╨Э╨Х ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В╤Б╤П.
--- queue_on_teleport ╤Г╨╢╨╡ ╨┤╨╡╤А╨╢╨╕╤В loader ╨▓ ╨╛╤З╨╡╤А╨╡╨┤╨╕ ╨Ф╨Ю ╤В╨╡╨╗╨╡╨┐╨╛╤А╤В╨░.
--- ╨Я╨╛╨▓╤В╨╛╤А╨╜╤Л╨╣ ╨▓╤Л╨╖╨╛╨▓ doQueueAutoLoad() ╨╕╨╖ ╤Е╤Г╨║╨░ ╨┤╨╛╨▒╨░╨▓╨╗╤П╨╗ ╨▒╤Л ╨▓╤В╨╛╤А╤Г╤О ╨║╨╛╨┐╨╕╤О
--- ╨▓ ╤В╤Г ╨╢╨╡ ╨╛╤З╨╡╤А╨╡╨┤╤М, ╨╕ ╨┐╨╛╤Б╨╗╨╡ N ╤В╨╡╨╗╨╡╨┐╨╛╤А╤В╨╛╨▓ ╨╖╨░╨┐╤Г╤Б╨║╨░╨╗╨╛╤Б╤М ╨▒╤Л N ╨║╨╛╨┐╨╕╨╣ ╤Б╨║╤А╨╕╨┐╤В╨░.
+-- 🎯 Хук OnTeleport намеренно НЕ используется.
+-- queue_on_teleport уже держит loader в очереди ДО телепорта.
+-- Повторный вызов doQueueAutoLoad() из хука добавлял бы вторую копию
+-- в ту же очередь, и после N телепортов запускалось бы N копий скрипта.
 
 -- ============================================================
--- тМи KEYBIND ╨Ь╨Х╨Э╨о
+-- ⌨ KEYBIND МЕНЮ
 -- ============================================================
 local UserInputService = game:GetService("UserInputService")
 
@@ -2632,12 +2632,12 @@ local function toggleMenu()
     local gui = mainGuiRef
     if not (gui and gui.Parent) then gui = findScriptGui() end
     if not gui then
-        pcall(function() Library:Notify('тЭМ GUI ╨╝╨╡╨╜╤О ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜', 2) end)
+        pcall(function() Library:Notify('❌ GUI меню не найден', 2) end)
         return
     end
     pcall(function() gui.Enabled = not gui.Enabled end)
     pcall(function()
-        Library:Notify(gui.Enabled and 'ЁЯУЦ ╨Ь╨╡╨╜╤О ╨╛╤В╨║╤А╤Л╤В╨╛' or 'ЁЯУХ ╨Ь╨╡╨╜╤О ╤Б╨║╤А╤Л╤В╨╛', 1)
+        Library:Notify(gui.Enabled and '📖 Меню открыто' or '📕 Меню скрыто', 1)
     end)
 end
 
@@ -2661,12 +2661,12 @@ task.spawn(function()
     pcall(findScriptGui)
 end)
 
-local KeybindGroup = Tabs.Utilities:AddLeftGroupbox('тМи ╨С╨╕╨╜╨┤ ╨╝╨╡╨╜╤О')
+local KeybindGroup = Tabs.Utilities:AddLeftGroupbox('⌨ Бинд меню')
 
 KeybindGroup:AddToggle('KeybindToggle', {
-    Text = 'тМи ╨Т╨║╨╗. ╨▒╨╕╨╜╨┤ ╨┐╨╛╨║╨░╨╖╨░/╤Б╨║╤А╤Л╤В╨╕╤П ╨╝╨╡╨╜╤О',
+    Text = '⌨ Вкл. бинд показа/скрытия меню',
     Default = false,
-    Tooltip = '╨Э╨░╨╢╨╝╨╕ ╨▓╤Л╨▒╤А╨░╨╜╨╜╤Г╤О ╨║╨╗╨░╨▓╨╕╤И╤Г тАФ ╨╝╨╡╨╜╤О ╤Б╨║╤А╨╛╨╡╤В╤Б╤П/╨┐╨╛╤П╨▓╨╕╤В╤Б╤П',
+    Tooltip = 'Нажми выбранную клавишу — меню скроется/появится',
     Callback = function(Value)
         keybindEnabled = Value
         rebuildKeybind()
@@ -2683,48 +2683,48 @@ KeybindGroup:AddDropdown('KeybindKey', {
     },
     Default = 'RightShift',
     Multi = false,
-    Text = '╨Ъ╨╗╨░╨▓╨╕╤И╨░ ╨▒╨╕╨╜╨┤╨░',
-    Tooltip = '╨Ъ╨░╨║╨░╤П ╨║╨╗╨░╨▓╨╕╤И╨░ ╨▒╤Г╨┤╨╡╤В ╨╛╤В╨║╤А╤Л╨▓╨░╤В╤М/╨╖╨░╨║╤А╤Л╨▓╨░╤В╤М ╨╝╨╡╨╜╤О',
+    Text = 'Клавиша бинда',
+    Tooltip = 'Какая клавиша будет открывать/закрывать меню',
     Callback = function(Value)
         local ok = pcall(function() keybindKey = Enum.KeyCode[Value] end)
         if ok then
             rebuildKeybind()
-            pcall(function() Library:Notify('тМи ╨С╨╕╨╜╨┤: ' .. Value, 1) end)
+            pcall(function() Library:Notify('⌨ Бинд: ' .. Value, 1) end)
         end
     end,
 })
 
 KeybindGroup:AddButton({
-    Text = 'ЁЯУЦ ╨Я╨╛╨║╨░╨╖╨░╤В╤М ╨╝╨╡╨╜╤О',
+    Text = '📖 Показать меню',
     Func = function()
         if setMenuVisible(true) then
-            pcall(function() Library:Notify('ЁЯУЦ ╨Ь╨╡╨╜╤О ╨╛╤В╨║╤А╤Л╤В╨╛', 1) end)
+            pcall(function() Library:Notify('📖 Меню открыто', 1) end)
         end
     end,
 })
 
 KeybindGroup:AddButton({
-    Text = 'ЁЯУХ ╨б╨║╤А╤Л╤В╤М ╨╝╨╡╨╜╤О',
+    Text = '📕 Скрыть меню',
     Func = function()
         if setMenuVisible(false) then
-            pcall(function() Library:Notify('ЁЯУХ ╨Ь╨╡╨╜╤О ╤Б╨║╤А╤Л╤В╨╛. ╨Т╨╡╤А╨╜╨╕: ' .. keybindKey.Name, 2) end)
+            pcall(function() Library:Notify('📕 Меню скрыто. Верни: ' .. keybindKey.Name, 2) end)
         end
     end,
 })
 
 KeybindGroup:AddButton({
-    Text = 'ЁЯФО ╨Э╨░╨╣╤В╨╕ GUI ╨╝╨╡╨╜╤О',
+    Text = '🔎 Найти GUI меню',
     Func = function()
         local gui = findScriptGui()
         if gui then
-            pcall(function() Library:Notify('тЬЕ GUI: ' .. gui:GetFullName(), 3) end)
-            print('[Keybind] ╨Э╨░╨╣╨┤╨╡╨╜ GUI:', gui:GetFullName())
+            pcall(function() Library:Notify('✅ GUI: ' .. gui:GetFullName(), 3) end)
+            print('[Keybind] Найден GUI:', gui:GetFullName())
         else
-            pcall(function() Library:Notify('тЭМ GUI ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜, ╤Б╨╝╨╛╤В╤А╨╕ F9', 3) end)
+            pcall(function() Library:Notify('❌ GUI не найден, смотри F9', 3) end)
             local hui = (gethui and gethui()) or game:GetService("CoreGui")
             for _, c in ipairs(hui:GetChildren()) do
                 if c:IsA("ScreenGui") then
-                    print('  ScreenGui:', c.Name, '| ╨┤╨╡╤В╨╡╨╣:', #c:GetChildren())
+                    print('  ScreenGui:', c.Name, '| детей:', #c:GetChildren())
                 end
             end
         end
@@ -2732,7 +2732,7 @@ KeybindGroup:AddButton({
 })
 
 -- ============================================================
--- тЪЩ ╨Э╨Р╨б╨в╨а╨Ю╨Щ╨Ъ╨Ш
+-- ⚙ НАСТРОЙКИ
 -- ============================================================
 SaveManager:SetLibrary(Library)
 ThemeManager:SetLibrary(Library)
@@ -2753,48 +2753,48 @@ ThemeManager:ApplyToTab(Tabs.Settings)
 SaveManager:LoadAutoloadConfig()
 
 -- ============================================================
--- ЁЯОп ╨Ь╨Х╨Э╨Х╨Ф╨Ц╨Х╨а ╨Ъ╨Ю╨Э╨д╨Ш╨У╨Ю╨Т ╨Р╨Ъ╨Ъ╨Р╨г╨Э╨в╨Р (UI)
+-- 🎯 МЕНЕДЖЕР КОНФИГОВ АККАУНТА (UI)
 -- ============================================================
-local ConfigGroup = Tabs.Settings:AddLeftGroupbox('ЁЯСд ╨Р╨║╨║╨░╤Г╨╜╤В')
+local ConfigGroup = Tabs.Settings:AddLeftGroupbox('👤 Аккаунт')
 
-ConfigGroup:AddLabel('ЁЯСд ' .. LocalPlayer.Name, false)
-ConfigGroup:AddLabel('ЁЯЖФ UserId: ' .. USER_ID, false)
-ConfigGroup:AddLabel('ЁЯУБ ╨д╨░╨╣╨╗╤Л: ' .. USER_ID .. '_*.json', false)
+ConfigGroup:AddLabel('👤 ' .. LocalPlayer.Name, false)
+ConfigGroup:AddLabel('🆔 UserId: ' .. USER_ID, false)
+ConfigGroup:AddLabel('📁 Файлы: ' .. USER_ID .. '_*.json', false)
 
 ConfigGroup:AddButton({
-    Text = 'ЁЯТ╛ ╨б╨╛╤Е╤А╨░╨╜╨╕╤В╤М ╨║╨╛╨╜╤Д╨╕╨│ ╨░╨║╨║╨░╤Г╨╜╤В╨░',
+    Text = '💾 Сохранить конфиг аккаунта',
     Func = function()
         saveAccountInfo()
         savePositionsToFile()
         saveSpeedToFile()
-        Library:Notify('ЁЯТ╛ ╨б╨╛╤Е╤А╨░╨╜╨╡╨╜╨╛ ╨┤╨╗╤П ' .. LocalPlayer.Name, 3)
-        print('[Configs] ЁЯТ╛ ╨б╨╛╤Е╤А╨░╨╜╨╡╨╜╨╛:', LocalPlayer.Name, '(' .. USER_ID .. ')')
+        Library:Notify('💾 Сохранено для ' .. LocalPlayer.Name, 3)
+        print('[Configs] 💾 Сохранено:', LocalPlayer.Name, '(' .. USER_ID .. ')')
     end,
 })
 
 ConfigGroup:AddButton({
-    Text = 'ЁЯУВ ╨Ч╨░╨│╤А╤Г╨╖╨╕╤В╤М ╨║╨╛╨╜╤Д╨╕╨│ ╨░╨║╨║╨░╤Г╨╜╤В╨░',
+    Text = '📂 Загрузить конфиг аккаунта',
     Func = function()
         loadPositionsFromFile()
         loadSpeedFromFile()
         pcall(updatePosLabel)
-        Library:Notify('ЁЯУВ ╨Ч╨░╨│╤А╤Г╨╢╨╡╨╜╨╛ ╨┤╨╗╤П ' .. LocalPlayer.Name, 3)
+        Library:Notify('📂 Загружено для ' .. LocalPlayer.Name, 3)
     end,
 })
 
 ConfigGroup:AddButton({
-    Text = 'ЁЯУЛ ╨б╨┐╨╕╤Б╨╛╨║ ╨▓╤Б╨╡╤Е ╨║╨╛╨╜╤Д╨╕╨│╨╛╨▓ ╨░╨║╨║╨░╤Г╨╜╤В╨╛╨▓',
+    Text = '📋 Список всех конфигов аккаунтов',
     Func = function()
-        print('========== ╨Ъ╨Ю╨Э╨д╨Ш╨У╨Ш ╨Р╨Ъ╨Ъ╨Р╨г╨Э╨в╨Ю╨Т ==========')
+        print('========== КОНФИГИ АККАУНТОВ ==========')
         if not listfiles or not isfolder then
-            print('тЭМ listfiles/isfolder ╨╜╨╡╨┤╨╛╤Б╤В╤Г╨┐╨╜╤Л')
+            print('❌ listfiles/isfolder недоступны')
             return
         end
 
         local exists = false
         pcall(function() exists = isfolder(CONFIGS_FOLDER) end)
         if not exists then
-            print('╨Я╨░╨┐╨║╨░ ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░:', CONFIGS_FOLDER)
+            print('Папка не найдена:', CONFIGS_FOLDER)
             return
         end
 
@@ -2813,9 +2813,9 @@ ConfigGroup:AddButton({
             end
         end
 
-        print('╨Э╨░╨╣╨┤╨╡╨╜╨╛ ╨░╨║╨║╨░╤Г╨╜╤В╨╛╨▓:', #accounts)
+        print('Найдено аккаунтов:', #accounts)
         for _, a in ipairs(accounts) do
-            local marker = (a.uid == USER_ID) and ' тЖР ╨в╨л' or ''
+            local marker = (a.uid == USER_ID) and ' ← ТЫ' or ''
             print(string.format('  %s (%s)%s', a.name, a.uid, marker))
         end
         print('=======================================')
@@ -2823,7 +2823,7 @@ ConfigGroup:AddButton({
 })
 
 -- ============================================================
--- ╨д╨Ш╨Э╨Р╨Ы╨м╨Э╨Р╨п ╨Я╨а╨Ю╨Т╨Х╨а╨Ъ╨Р ╨б╨Ъ╨Ю╨а╨Ю╨б╨в╨Ш ╨Ш╨Ч ╨Ъ╨Ю╨Э╨д╨Ш╨У╨Р
+-- ФИНАЛЬНАЯ ПРОВЕРКА СКОРОСТИ ИЗ КОНФИГА
 -- ============================================================
 task.spawn(function()
     task.wait(2)
@@ -2832,11 +2832,11 @@ task.spawn(function()
         local lvl = parseLevel(val)
         if lvl then
             selectedLevel = lvl
-            print('[SpeedUp] ЁЯФД ╨Ш╨╖ ╨║╨╛╨╜╤Д╨╕╨│╨░: x' .. lvl)
+            print('[SpeedUp] 🔄 Из конфига: x' .. lvl)
         end
     else
         if loadSpeedFromFile() then
-            print('[SpeedUp] ЁЯФД ╨Ш╨╖ ╤Д╨░╨╣╨╗╨░: x' .. tostring(selectedLevel))
+            print('[SpeedUp] 🔄 Из файла: x' .. tostring(selectedLevel))
         end
     end
 end)
@@ -2864,4 +2864,4 @@ end)
 
 Library.ToggleKeybind = Enum.KeyCode.RightShift
 
-print('[AutoVote+SpeedUp+Units+AutoUpgrade+AntiAFK+AutoReplay+AutoMutation+Keybind+AccountConfigs+AutoLoad] ╨Ч╨░╨│╤А╤Г╨╢╨╡╨╜╨╛ тЬЕ')
+print('[AutoVote+SpeedUp+Units+AutoUpgrade+AntiAFK+AutoReplay+AutoMutation+Keybind+AccountConfigs+AutoLoad] Загружено ✅')
