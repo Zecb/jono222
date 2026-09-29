@@ -252,6 +252,11 @@ end
 local RequestTower, SpawnTower, GetPlayerPlacement
 
 local function loadRemotes()
+    -- ⚡ Уже найдены — повторно искать незачем. loadRemotes() зовётся
+    -- на КАЖДУЮ попытку постановки, а 3 × FindFirstChild каждый раз
+    -- — чистые накладные расходы.
+    if RequestTower and SpawnTower then return true end
+
     if not Functions then
         print('[Remotes] ❌ Functions не найден')
         return false
@@ -269,25 +274,20 @@ local function loadRemotes()
 end
 loadRemotes()
 
--- Найти UnitID по имени (через UnitManager GUI)
-local function findUnitIdByName(baseName)
-    local ok, folder = pcall(function()
-        return game:GetService("Players").LocalPlayer.PlayerGui.GameGui.UnitManager.Units
-    end)
-    if not ok or not folder then return nil end
+-- Forward-declaration: findUnitIdByName ниже вызывает buildUnitIdMap,
+-- а сам buildUnitIdMap определён сильно ниже (в секции лейблов слотов).
+-- Без этого Luau посчитал бы его глобалом — и каждый вызов был бы nil.
+local buildUnitIdMap
 
-    for _, unit in ipairs(folder:GetChildren()) do
-        if unit:IsA("GuiObject") then
-            local unitNameLabel = unit:FindFirstChild("UnitName")
-            local unitId        = unit:FindFirstChild("UnitID")
-            if unitNameLabel and unitId and unitId:IsA("StringValue") then
-                if unitNameLabel.Text == baseName then
-                    return unitId.Value
-                end
-            end
-        end
-    end
-    return nil
+-- Найти UnitID по имени — через кешированную карту (buildUnitIdMap).
+-- Раньше здесь был полный обход UnitManager (100+ юнитов × 2
+-- FindFirstChild) НА КАЖДУЮ попытку постановки.
+local function findUnitIdByName(baseName)
+    local ok, id = pcall(function()
+        return buildUnitIdMap()[baseName]
+    end)
+    if not ok then return nil end
+    return id
 end
 
 -- ============================================================
@@ -1501,32 +1501,10 @@ local function scanUnitManager(force)
 end
 
 -- Получить размещённые башни в мире
-local function getPlacedTowersInWorld()
-    local result = {}
-    local ok, towersFolder = pcall(function()
-        return workspace:FindFirstChild("Towers")
-    end)
-    if not ok or not towersFolder then return result end
-
-    for _, obj in ipairs(towersFolder:GetChildren()) do
-        local pos  = nil
-        local name = obj.Name
-
-        if obj:IsA("Model") then
-            local part = obj:FindFirstChild("HumanoidRootPart")
-                or obj.PrimaryPart
-                or obj:FindFirstChildWhichIsA("BasePart")
-            if part then pos = part.Position end
-        elseif obj:IsA("BasePart") then
-            pos = obj.Position
-        end
-
-        if pos then
-            table.insert(result, { instance = obj, name = name, position = pos })
-        end
-    end
-    return result
-end
+-- Forward-declaration: checkOccupied() ниже вызывает эту функцию,
+-- а ускоренное тело определено сильно ниже (после buildUnitIdMap).
+-- Без этого Luau посчитал бы её глобалом.
+local getPlacedTowersInWorld
 
 -- Проверки
 local occupiedCheckRadius   = 2
@@ -1575,9 +1553,8 @@ end
 
 -- Один обход UnitManager → карта UnitName → UnitID (вместо 6 обходов),
 -- с кешем на 1.5 сек. force=true — игнорировать кеш.
--- Объявлен выше секции AUTO UPGRADE, поэтому виден и там как local —
--- выносить в _G незачем (и не надо: это засоряет глобальное окружение).
-local function buildUnitIdMap(force)
+-- Forward-declared выше (см. рядом с findUnitIdByName).
+buildUnitIdMap = function(force)
     local S   = _G.SLOP_SCAN_CACHE
     local now = tick()
     if not force and S.idMap and (now - S.idTime) < S.ID_TTL then
@@ -1603,6 +1580,63 @@ local function buildUnitIdMap(force)
     S.idMap  = map
     S.idTime = now
     return map
+end
+
+-- ════════════════════════════════════════════════════════════
+-- 🌍 УСКОРЕНИЕ ПРОВЕРКИ ЗАНЯТОСТИ
+-- ════════════════════════════════════════════════════════════
+-- Раньше checkOccupied() на КАЖДУЮ позицию заново обходил
+-- workspace.Towers, а внутри делал FindFirstChildWhichIsA("BasePart") —
+-- это поиск по ВСЕМ потомкам. При 12 позициях и 20 башнях это
+-- сотни глубоких поисков на один проход расстановки.
+--
+--   1) _partCache — Model → BasePart. Ссылка на инстанс постоянна,
+--      меняется только .Position, поэтому искать заново незачем.
+--   2) _placedSnapshot — позиции на ОДИН проход расстановки.
+
+local _partCache      = {}   -- Model -> BasePart | false (части нет)
+local _placedSnapshot = nil
+
+local function invalidatePlacedSnapshot()
+    _placedSnapshot = nil
+end
+
+local function getPlacedTowersInWorld()
+    if _placedSnapshot then return _placedSnapshot end
+
+    local result = {}
+    local ok, towersFolder = pcall(function()
+        return workspace:FindFirstChild("Towers")
+    end)
+    if not ok or not towersFolder then
+        _placedSnapshot = result
+        return result
+    end
+
+    for _, obj in ipairs(towersFolder:GetChildren()) do
+        local part = nil
+        local name = obj.Name
+
+        if obj:IsA("Model") then
+            local cached = _partCache[obj]
+            if cached == nil then
+                cached = obj:FindFirstChild("HumanoidRootPart")
+                    or obj.PrimaryPart
+                    or obj:FindFirstChildWhichIsA("BasePart") or false
+                _partCache[obj] = cached
+            end
+            if cached then part = cached end
+        elseif obj:IsA("BasePart") then
+            part = obj
+        end
+
+        if part then
+            table.insert(result, { instance = obj, name = name, position = part.Position })
+        end
+    end
+
+    _placedSnapshot = result
+    return result
 end
 
 -- Обновление лейблов слотов
@@ -1898,6 +1932,29 @@ ActionGroup:AddSlider('PlaceDelay', {
     Callback = function(v) _G.__placeDelay = v end,
 })
 
+-- ──────── ⚡ ТАЙМИНГИ ПОСТАНОВКИ (скорость) ────────
+ActionGroup:AddSlider('InvokeDelay', {
+    Text    = '⚡ Пауза между вариантами',
+    Default = 0.1,
+    Min     = 0, Max = 0.5, Rounding = 2, Compact = false,
+    Tooltip = 'Пауза после неудачной попытки варианта. 0 = максимум скорости (больше риска отклонения по rate-limit)',
+    Callback = function(v) _G.__invokeDelay = v end,
+})
+
+ActionGroup:AddToggle('FastPlaceToggle', {
+    Text    = '⚡ Быстрая постановка',
+    Default = false,
+    Tooltip = 'Убирает фиксированные паузы (0.15 после клика по слоту, 0.08 после RequestTower). Быстрее, но если игра не успевает обработать слот — выключи',
+    Callback = function(v) _G.__fastPlace = v end,
+})
+
+ActionGroup:AddToggle('SlopDebugToggle', {
+    Text    = '🐛 Подробный лог',
+    Default = false,
+    Tooltip = 'Печатать в F9 перечень вариантов перед каждой постановкой (замедляет, включай только для отладки)',
+    Callback = function(v) _G.__SLOP_DEBUG = v end,
+})
+
 ActionGroup:AddSlider('OccupiedRadius', {
     Text    = '📏 Радиус (0=выкл)',
     Default = 2,
@@ -1922,8 +1979,13 @@ ActionGroup:AddToggle('SkipExactToggle', {
 
 -- ============================================================
 -- ════════════════════════════════════════════════════════════
---   🎯 ФУНКЦИЯ РАЗМЕЩЕНИЯ ЮНИТА
+-- 🎯 ФУНКЦИЯ РАЗМЕЩЕНИЯ ЮНИТА
 -- ════════════════════════════════════════════════════════════
+
+-- ⚡ Какой вариант сработал для базового имени. После первой
+--   удачной постановки следующие идут по короткому пути: 1 попытка
+--   вместо перебора всех. Заполняется в placeUnitAt.
+local _goodVariant = {}
 -- ============================================================
 
 local function placeUnitAt(positionData, useCFrame)
@@ -1956,7 +2018,19 @@ local function placeUnitAt(positionData, useCFrame)
         end
     end
 
-    -- Собираем все варианты (модификаторы + owned)
+    -- ══════════════════════════════════════════════════════
+    -- ⚡ ПОРЯДОК ПЕРЕБОРА ВАРИАНТОВ
+    -- ══════════════════════════════════════════════════════
+    -- Каждая неудачная попытка — это 2 InvokeServer (сетевых
+    -- round-trip) плюс ожидания. Значит порядок решает всё.
+    --
+    -- Раньше sort() КЛАД ВСЕ варианты с модификаторами вперёд, а
+    -- чистый baseName — в самый конец. В худшем случае только
+    -- последний вариант и был правильным: ~15 неудачных
+    -- round-trip на одну постановку.
+    --
+    -- Теперь: 1) что уже сработало  2) id из UnitManager
+    --         3) чистое имя  4) owned-варианты  5) неowned-модификаторы
     local variants = {}
     local seen = {}
     local function add(v)
@@ -1966,34 +2040,31 @@ local function placeUnitAt(positionData, useCFrame)
         end
     end
 
-    add(findUnitIdByName(baseName))
+    add(_goodVariant[baseName])          -- 1) сработавший раньше
+    add(findUnitIdByName(baseName))      -- 2) id из UnitManager
+    add(baseName)                        -- 3) чистое имя
     local owned = getOwnedVariants(baseName)
-    for _, v in ipairs(owned) do add(v) end
-    add(baseName)
-    for _, mod in ipairs(MODIFIERS) do
+    for _, v in ipairs(owned) do add(v) end  -- 4) owned-варианты
+    for _, mod in ipairs(MODIFIERS) do   -- 5) остальные модификаторы
         add(baseName .. mod)
     end
 
-    -- Сортируем: сначала с модификаторами, потом короче
-    table.sort(variants, function(a, b)
-        local aHasMod = (a ~= baseName)
-        local bHasMod = (b ~= baseName)
-        if aHasMod and not bHasMod then return true end
-        if not aHasMod and bHasMod then return false end
-        return #a < #b
-    end)
-
-    print('[Units] 📋 Варианты "' .. baseName .. '": ' .. table.concat(variants, ' | '))
+    if _G.__SLOP_DEBUG then
+        print('[Units] 📋 Варианты "' .. baseName .. '" (' .. #variants .. '): '
+            .. table.concat(variants, ' | '))
+    end
 
     -- Клик по слоту
     if slotData.textButton then
         clickButton(slotData.textButton, true)
-        task.wait(0.15)
+        if not _G.__fastPlace then task.wait(0.15) end
     end
 
     local yOffset  = _G.__yOffset or -2
     local finalPos = Vector3.new(pos.X, pos.Y + yOffset, pos.Z)
     local cf       = CFrame.new(finalPos)
+
+    local invDelay = _G.__invokeDelay or 0.1
 
     -- Пробуем каждый вариант
     for _, fullUnitId in ipairs(variants) do
@@ -2005,18 +2076,20 @@ local function placeUnitAt(positionData, useCFrame)
         end)
 
         if ok1 and ret1 ~= false then
-            task.wait(0.08)
+            if not _G.__fastPlace then task.wait(0.08) end
 
             local ok2, ret2 = pcall(function()
                 return SpawnTower:InvokeServer(baseName, cf, false, fullUnitId)
             end)
 
             if ok2 and ret2 ~= false then
+                _goodVariant[baseName] = fullUnitId  -- запоминаем на будущее
+                invalidatePlacedSnapshot()
                 print('[Units] ✅ Размещено: ' .. fullUnitId)
                 return true, '✅ ' .. fullUnitId
             end
         end
-        task.wait(0.1)
+        if invDelay > 0 then task.wait(invDelay) end
     end
 
     return false, 'все варианты отклонены'
@@ -2061,6 +2134,9 @@ ActionGroup:AddSlider('AutoPlaceInterval', {
 runOnePlacePass = function()
     if #savedPositions == 0 then return 0 end
     local placed, failed, skipped = 0, 0, 0
+
+    -- Новый проход → снимок позиций в мире устарел
+    invalidatePlacedSnapshot()
 
     for i, p in ipairs(savedPositions) do
         if not autoPlaceEnabled then break end
@@ -2551,7 +2627,11 @@ runOneUpgradePass = function()
         elseif not unit.price then
             skipped_max = skipped_max + 1
         else
-            money = getMoney()
+            -- ⚡ getMoney() НЕ дёргаем на каждом юните: это
+            -- leaderstats.Money + tostring + parseMoney. При 100 юнитов
+            -- это 100 разборов чисел за проход. Обновляем только
+            -- после реально сделанного апгрейда — баланс меняется
+            -- только тогда.
             if unit.price > money then
                 skipped_money = skipped_money + 1
                 if upgradeMode == 'cheapest' then break end
@@ -2560,6 +2640,7 @@ runOneUpgradePass = function()
                     upgraded = upgraded + 1
                     upgradeStats.session = upgradeStats.session + 1
                     upgradeStats.total   = upgradeStats.total + 1
+                    money = getMoney()
                     task.wait(upgradeInterval)
                 end
             end
